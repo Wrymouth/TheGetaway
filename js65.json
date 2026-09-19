@@ -1,0 +1,17 @@
+{
+  "projects": [
+    {
+      "name": "TheGetaway",
+      "sources": [
+        "src/**/*.s"
+      ],
+      "includePaths": [
+        "include"
+      ],
+      "binIncludePaths": [
+        "assets"
+      ],
+      "target": "nes-nrom"
+    }
+  ]
+}
