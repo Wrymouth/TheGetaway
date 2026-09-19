@@ -8,8 +8,8 @@ PPUADDR    = $2006
 PPUDATA    = $2007
 
 APU_DMC_CTRL = $4010
-OAM_DMA      = $4014
+OAMDMA      = $4014
 APU_STATUS   = $4015
-JOY1         = $4016
-JOY2         = $4017
+CONT1         = $4016
+CONT2         = $4017
 APU_FRAME    = $4017
