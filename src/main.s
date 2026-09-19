@@ -1,6 +1,8 @@
 .include "common.inc"
 .include "controller.inc"
 .include "game_states.inc"
+.include "sprites.inc"
+.include "background.inc"
 
 .import handle_input_pad1
 
@@ -83,9 +85,11 @@ done:
 .endproc
 
 .proc main
-  LDA #GameStates::GAME
+  LDA #GameStates::ENTER_GAME
   JSR set_game_state
 main_loop:
+  JSR clear_vram_buffer
+  JSR clear_oam
   JSR handle_input_pad1
   JSR do_game_state
 set_sleeping:
