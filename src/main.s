@@ -18,7 +18,7 @@
   sei
   cld
   ldx #$40
-  stx APU_FRAME
+  stx APUFRAME
   ldx #$ff
   txs
   inx

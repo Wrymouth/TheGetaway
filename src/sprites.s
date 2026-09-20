@@ -15,3 +15,12 @@ loop:
   BPL loop
   RTS
 .endproc
+
+.proc draw_sprite_fixed
+  RTS
+.endproc
+
+.proc draw_sprite_dynamic
+  
+  RTS
+.endproc
