@@ -4,6 +4,9 @@ LEVEL_TOTAL_WIDTH = 32
 
 LEVEL_ROW_SIZE = 4 ; bytes in a single level row
 LEVEL_LENGTH = 60 ; two vertical nametables
+LEVEL_TOTAL_BYTES = LEVEL_LENGTH * 4
+
+LEVEL_BACKGROUND_BANK_SIZE = 64
 
 ; level format is 
 ; 1 byte - road start
@@ -20,5 +23,5 @@ LEVEL_LENGTH = 60 ; two vertical nametables
 
 .code
 
-.global init_level
-.global draw_initial_level
+.global level_init
+.global level_draw_initial

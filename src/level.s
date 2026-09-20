@@ -9,7 +9,7 @@ current_row_start: .res 1
 level: .res 240
 
 .code
-.proc init_level
+.proc level_init
   ; initialize the level as a single long straight road
   LDX #$00
 loop:
@@ -29,7 +29,36 @@ loop:
   RTS
 .endproc
 
-.proc write_level_palettes
+.proc level_write_chr
+  LDA #$23
+  STA PPUADDR
+  LDA #$C0
+  STA PPUADDR
+
+  LDX #$00
+loop_draw_bank_0:
+  LDA background_bank_0,x
+  STA PPUDATA
+  INX
+  CPX #LEVEL_BACKGROUND_BANK_SIZE
+  BCC loop_draw_bank_0
+
+  LDA #$2B
+  STA PPUADDR
+  LDA #$C0
+  STA PPUADDR
+
+  LDX #$00
+loop_draw_bank_1:
+  LDA background_bank_1,x
+  STA PPUDATA
+  INX
+  CPX #LEVEL_BACKGROUND_BANK_SIZE
+  BCC loop_draw_bank_1
+  RTS
+.endproc
+
+.proc level_write_palettes
   LDA #$3F
   STA PPUADDR
   LDA #$00
@@ -52,12 +81,7 @@ loop:
   RTS
 .endproc
 
-.proc draw_initial_level
-  ppu_addr := locals+0 ; 2 bytes, big endian
-  current_row_road_start := locals+2
-  current_row_road_end := locals+3
-  current_row_offset := locals+4
-
+.proc level_draw_initial
   LDA game_status_flags
   ORA #GameStatusFlags::NMI_SKIP_SCROLL
   STA game_status_flags
@@ -69,15 +93,38 @@ loop:
 
   LDX #$00
 draw_row:
+  JSR level_draw_row_directly
+  INX
+  INX
+  INX
+  INX
+  CPX #LEVEL_LENGTH*LEVEL_ROW_SIZE
+  BCC draw_row
+
+  JSR level_write_palettes
+  JSR level_write_chr
+
+  LDA game_status_flags
+  AND #<~GameStatusFlags::NMI_SKIP_SCROLL
+  STA game_status_flags
+  RTS
+.endproc
+
+.proc level_draw_row_directly
+  ppu_addr := locals+0 ; 2 bytes, big endian
+  current_row_road_start := locals+2
+  current_row_road_end := locals+3
+  current_row_offset := locals+4
+
   LDA #$00
   STA ppu_addr+0
   STA ppu_addr+1
   
   TXA
-  CMP #LEVEL_LENGTH/2*4
+  CMP #LEVEL_TOTAL_BYTES/2
   BCC :+
     SEC
-    SBC #30*4
+    SBC #LEVEL_TOTAL_BYTES/2
 :
   ; mul 8, 16 bit result
   ASL
@@ -121,37 +168,31 @@ store_ppu_addr:
 loop_draw_row:
   LDA current_row_offset
   CMP current_row_road_start
+  BEQ draw_road_left
   BCC draw_grass
   CMP current_row_road_end
-  BEQ draw_road
+  BEQ draw_road_right
   BCS draw_grass
 draw_road:
   LDA #$3D ; road
-  STA PPUDATA
   JMP inc_row_offset
+draw_road_left:
+  LDA #$3E ; road left edge
+  JMP inc_row_offset
+draw_road_right:
+  LDA #$3F ; road right edge
+  JMP inc_row_offset
+
 draw_grass:
   LDA #$3C ; grass
-  STA PPUDATA
 inc_row_offset:
+  STA PPUDATA
   LDA current_row_offset
   CLC
   ADC #$01
   STA current_row_offset
   CMP #LEVEL_TOTAL_WIDTH
   BCC loop_draw_row
-
-  INX
-  INX
-  INX
-  INX
-  CPX #LEVEL_LENGTH*LEVEL_ROW_SIZE
-  BCC draw_row
-
-  JSR write_level_palettes
-
-  LDA game_status_flags
-  AND #<~GameStatusFlags::NMI_SKIP_SCROLL
-  STA game_status_flags
   RTS
 .endproc
 
@@ -163,3 +204,8 @@ sprite_palettes:
 
 bg_palette:
 .byte $0F, $10, $2A, $30
+
+background_bank_0:
+.incbin "background_bank_0.chr"
+background_bank_1:
+.incbin "background_bank_1.chr"

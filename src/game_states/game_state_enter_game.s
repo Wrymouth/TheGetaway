@@ -14,8 +14,8 @@
 
   ; initialize level RAM to just straight roads for two screens
   ; draw initial background from level RAM and write CHR data
-  JSR init_level
-  JSR draw_initial_level
+  JSR level_init
+  JSR level_draw_initial
 
   LDA #GameStates::GAME
   JSR set_game_state
