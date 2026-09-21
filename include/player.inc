@@ -5,9 +5,12 @@ PLAYER_MAX_VEL_Y = $00FE
 PLAYER_ACCEL = $0002
 
 PLAYER_INITIAL_POS_X = $1E00
-PLAYER_INITIAL_POS_Y = $5800
+PLAYER_INITIAL_POS_Y = $3A00
 
-PLAYER_VEL_X = $0010
+PLAYER_VEL_X = $0020
+
+.zeropage
+.globalzp player_x, player_y
 
 .code
 .global player_init

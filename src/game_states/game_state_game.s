@@ -1,5 +1,6 @@
 .include "common.inc"
 .include "game_states.inc"
+.include "camera.inc"
 .include "player.inc"
 
 .proc game_state_game
@@ -11,6 +12,7 @@
     STA game_status_flags
   :
   JSR player_update
+  JSR camera_update
   JSR player_draw
   RTS
 .endproc

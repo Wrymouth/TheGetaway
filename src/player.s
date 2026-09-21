@@ -1,5 +1,6 @@
 .include "common.inc"
 .include "player.inc"
+.include "level.inc"
 .include "camera.inc"
 .include "controller.inc"
 .include "sprites.inc"
@@ -49,6 +50,15 @@ player_vel_y: .res 2
   JSR player_limit_vel_pos
 move:
   JSR player_move_y
+
+  LDA player_y+1
+  CMP #LEVEL_LENGTH
+  BCC :+
+    LDA #LEVEL_LENGTH
+    CLC
+    ADC player_y+1
+    STA player_y+1
+  :
 
   LDA pad1_pressed
   AND #BTN_LEFT
@@ -159,16 +169,34 @@ done:
 .proc player_get_screen_coords
   player_x_camera := locals+0 ; 2 bytes
   player_y_camera := locals+2 ; 2 bytes
+  temp_camera_y := locals+4 ; 1 byte, just the high
   sprite_x := locals+11
   sprite_y := locals+12
 
+
+  ; wait! what if camera_y is *greater* than player_y?
+  ; when wrapping, that is a thing that may happen.
+
+  LDA player_y+1
+  CMP camera_y+1
+  BCS :+
+    LDA camera_y+1
+    SEC
+    SBC #LEVEL_LENGTH
+    STA temp_camera_y
+    JMP sub_y
+  :
+  LDA camera_y+1
+  STA temp_camera_y
+sub_y:
   ; subtract camera position
   LDA player_y
   SEC
   SBC camera_y
   STA player_y_camera
+
   LDA player_y+1
-  SBC camera_y+1
+  SBC temp_camera_y
   STA player_y_camera+1
 
   LDA player_x

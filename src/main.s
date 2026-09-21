@@ -2,6 +2,7 @@
 .include "controller.inc"
 .include "game_states.inc"
 .include "sprites.inc"
+.include "camera.inc"
 .include "background.inc"
 
 .import handle_input_pad1
@@ -63,9 +64,9 @@
   BMI done 
   
   LDA PPUSTATUS
-  LDA #$00 ; X scroll first
+  LDA scroll_x ; X scroll first
   STA PPUSCROLL
-  LDA #$00 ; Y scroll
+  LDA scroll_y ; Y scroll
   STA PPUSCROLL
 
 done:
