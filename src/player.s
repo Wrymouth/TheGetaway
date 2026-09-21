@@ -1,6 +1,8 @@
 .include "common.inc"
 .include "player.inc"
+.include "camera.inc"
 .include "controller.inc"
+.include "sprites.inc"
 
 .zeropage
 player_x: .res 2
@@ -11,19 +13,224 @@ player_vel_y: .res 2
 .code
 
 .proc player_init
-  LDA #<PLAYER_INITIAL_POS
+  LDA #<PLAYER_INITIAL_POS_X
   STA player_x
-  LDA #>PLAYER_INITIAL_POS
+  LDA #>PLAYER_INITIAL_POS_X
   STA player_x+1
+  LDA #<PLAYER_INITIAL_POS_Y
+  STA player_y
+  LDA #>PLAYER_INITIAL_POS_Y
+  STA player_y+1
+  LDA #$00
+  STA player_vel_x
+  STA player_vel_x+1
+  STA player_vel_y
+  STA player_vel_y+1
   RTS
 .endproc
 
 .proc player_update
-  LDA pad1_first_pressed
-  AND #BTN_A
+  LDA pad1_pressed
+  AND #BTN_UP
+  BEQ :+
+    JSR player_accel
+  :
+  LDA pad1_pressed
+  AND #BTN_DOWN
+  BEQ :+
+    JSR player_decel
+  :
+
+  LDA player_vel_y+1
+  BPL :+
+    JSR player_limit_vel_neg
+    JMP move
+  :
+  JSR player_limit_vel_pos
+move:
+  JSR player_move_y
+
+  LDA pad1_pressed
+  AND #BTN_LEFT
+  BEQ :+
+    JSR player_move_left
+  :
+  LDA pad1_pressed
+  AND #BTN_RIGHT
+  BEQ :+
+    JSR player_move_right
+  : 
+  RTS
+.endproc
+
+.proc player_accel
+  LDA player_vel_y
+  SEC
+  SBC #<PLAYER_ACCEL
+  STA player_vel_y
+  LDA player_vel_y+1
+  SBC #>PLAYER_ACCEL
+  STA player_vel_y+1
+  RTS
+.endproc
+
+.proc player_decel
+  LDA player_vel_y
+  CLC
+  ADC #<PLAYER_ACCEL
+  STA player_vel_y
+  LDA player_vel_y+1
+  ADC #>PLAYER_ACCEL
+  STA player_vel_y+1
+  RTS
+.endproc
+
+.proc player_limit_vel_pos
+  LDA player_vel_y+1
+  CMP #$00
+  BEQ compare_lsb
+  BCS set_max_vel
+  JMP done
+compare_lsb:
+  LDA player_vel_y
+  CMP #$00
+  BCC done
+set_max_vel:
+  LDA #$00
+  STA player_vel_y
+  LDA #$00
+  STA player_vel_y+1
+done:
+  RTS
+.endproc
+
+.proc player_limit_vel_neg
+  LDA player_vel_y+1
+  CMP #>-PLAYER_MAX_VEL_Y
+  BEQ compare_lsb
+  BCS done
+  JMP set_max_vel
+compare_lsb:
+  LDA player_vel_y
+  CMP #<-PLAYER_MAX_VEL_Y
+  BCS done
+set_max_vel:
+  LDA #<-PLAYER_MAX_VEL_Y
+  STA player_vel_y
+  LDA #>-PLAYER_MAX_VEL_Y
+  STA player_vel_y+1
+done:
+  RTS
+.endproc
+
+.proc player_move_y
+  LDA player_y
+  CLC
+  ADC player_vel_y
+  STA player_y
+  LDA player_y+1
+  ADC player_vel_y+1
+  STA player_y+1
+  RTS
+.endproc
+
+.proc player_move_left
+  LDA player_x
+  SEC
+  SBC #<PLAYER_VEL_X
+  STA player_x
+  LDA player_x+1
+  SBC #>PLAYER_VEL_X
+  STA player_x+1
+  RTS
+.endproc
+
+.proc player_move_right
+  LDA player_x
+  CLC
+  ADC #<PLAYER_VEL_X
+  STA player_x
+  LDA player_x+1
+  ADC #>PLAYER_VEL_X
+  STA player_x+1
+  RTS
+.endproc
+
+.proc player_get_screen_coords
+  player_x_camera := locals+0 ; 2 bytes
+  player_y_camera := locals+2 ; 2 bytes
+  sprite_x := locals+11
+  sprite_y := locals+12
+
+  ; subtract camera position
+  LDA player_y
+  SEC
+  SBC camera_y
+  STA player_y_camera
+  LDA player_y+1
+  SBC camera_y+1
+  STA player_y_camera+1
+
+  LDA player_x
+  SEC
+  SBC camera_x
+  STA player_x_camera
+  LDA player_x+1
+  SBC camera_x+1
+  STA player_x_camera+1
+
+  ; convert world pos to screen pos
+  LDA player_y_camera+1
+  LSHIFT 3
+  STA sprite_y
+  LDA player_y_camera
+  RSHIFT 5
+  ORA sprite_y
+  STA sprite_y
+
+  LDA player_x_camera+1
+  LSHIFT 3
+  STA sprite_x
+  LDA player_x_camera
+  RSHIFT 5
+  ORA sprite_x
+  STA sprite_x
+
+
   RTS
 .endproc
 
 .proc player_draw
+  size := locals+10
+  sprite_x := locals+11
+  sprite_y := locals+12
+  sprite_attr := locals+13
+  sprite_ptr := locals+14 ; 2 bytes
+
+  ; get screen coords
+  JSR player_get_screen_coords ; this sets sprite_x and sprite_y
+
+  LDA #$00
+  STA sprite_attr
+
+  LDA player_sprite_idle
+  STA size
+  LDA #<(player_sprite_idle+1)
+  STA sprite_ptr
+  LDA #>(player_sprite_idle+1)
+  STA sprite_ptr+1
+  JSR draw_sprite_dynamic
   RTS
 .endproc
+
+player_sprites:
+
+player_sprite_idle:
+.byte 24 ; size
+NEXXT_SPRITE 0,   0,$00,2
+NEXXT_SPRITE 0,  16,$02,2
+NEXXT_SPRITE 0,   8,$01,2
+NEXXT_SPRITE 8,   8,$01,2|OAM_FLAG_FLIP_H
+NEXXT_SPRITE 8,   0,$00,2|OAM_FLAG_FLIP_H
+NEXXT_SPRITE 8,  16,$02,2|OAM_FLAG_FLIP_H
+

@@ -16,6 +16,8 @@
   ; draw initial background from level RAM and write CHR data
   JSR level_init
   JSR level_draw_initial
+  JSR camera_init
+  JSR player_init
 
   LDA #GameStates::GAME
   JSR set_game_state

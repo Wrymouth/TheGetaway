@@ -10,6 +10,15 @@ camera_vel_y: .res 2
 .code
 
 .proc camera_init
+  LDA #$00
+  STA camera_x
+  STA camera_x+1
+  STA camera_y
+  STA camera_y+1
+  STA camera_vel_x
+  STA camera_vel_x+1
+  STA camera_vel_y
+  STA camera_vel_y+1
   RTS
 .endproc
 

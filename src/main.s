@@ -90,6 +90,7 @@ done:
 main_loop:
   JSR clear_vram_buffer
   JSR clear_oam
+  JSR set_dynamic_oam_direction
   JSR handle_input_pad1
   JSR do_game_state
 set_sleeping:

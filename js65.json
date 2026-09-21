@@ -14,5 +14,15 @@
       "target": "nes-nrom",
       "dbgfile": "TheGetaway.mlb"
     }
-  ]
+  ],
+  "lint": {
+    "rules": {
+      "bare-number-operand": "warning",
+      "suspicious-address-expr": "warning",
+      "suspicious-line-continuation": "warning",
+      "endproc-no-terminator": "warning",
+      "jsr-rts-tail-call": "off",
+      "jmp-fallthrough": "info"
+    }
+  }
 }

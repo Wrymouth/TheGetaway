@@ -11,5 +11,6 @@
     STA game_status_flags
   :
   JSR player_update
+  JSR player_draw
   RTS
 .endproc
