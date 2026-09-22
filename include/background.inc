@@ -14,6 +14,15 @@ VRAM_BUFFER_SIZE = $9F
   INX
 .endmacro
 
+.macro VRAM_BUFFER_SET_NAMETABLE_BYTES nametable_h, nametable_l
+  LDA nametable_h
+  STA VRAM_BUFFER_START,x
+  INX
+  LDA nametable_l
+  STA VRAM_BUFFER_START,x
+  INX
+.endmacro
+
 .macro VRAM_BUFFER_SET_NAMETABLE_POS nametable_pos
   LDA nametable_pos+0
   STA VRAM_BUFFER_START,x
@@ -38,5 +47,9 @@ VRAM_BUFFER_SIZE = $9F
   STX buffer_idx
 .endmacro
 
+.zeropage
+.globalzp buffer_idx
+
 .code
 .global clear_vram_buffer
+.global draw_buffered_gfx

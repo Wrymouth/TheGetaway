@@ -8,6 +8,8 @@ LEVEL_TOTAL_BYTES = LEVEL_LENGTH * 4
 
 LEVEL_BACKGROUND_BANK_SIZE = 64
 
+SCROLL_SEAM_OFFSET = $02
+
 ; level format is 
 ; 1 byte - road start
 ; 1 byte - road end
@@ -24,4 +26,7 @@ LEVEL_BACKGROUND_BANK_SIZE = 64
 .code
 
 .global level_init
+.global level_update
+.global level_draw_row
+
 .global level_draw_initial

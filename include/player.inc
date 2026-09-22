@@ -1,7 +1,7 @@
 ; player position is Q11.5
 ; 8 bits "tile position", 3 bits "pixel position", 5 bits "subpixel position"
 
-PLAYER_MAX_VEL_Y = $00FE
+PLAYER_MAX_VEL_Y = $00FF
 PLAYER_ACCEL = $0002
 
 PLAYER_INITIAL_POS_X = $0F00

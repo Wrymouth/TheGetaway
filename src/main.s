@@ -49,6 +49,11 @@
   TYA
   PHA
 
+  LDA game_status_flags
+  BMI :+
+    JSR draw_buffered_gfx
+  :
+
   ; OAM DMA
   LDA #$00
   STA OAMADDR

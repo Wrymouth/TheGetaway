@@ -12,7 +12,8 @@
         "assets"
       ],
       "target": "nes-nrom",
-      "dbgfile": "TheGetaway.mlb"
+      "dbgfile": "TheGetaway.mlb",
+      "mapfile": "TheGetaway.map"
     }
   ],
   "lint": {

@@ -1,5 +1,7 @@
 .include "common.inc"
 .include "level.inc"
+.include "camera.inc"
+.include "background.inc"
 
 .zeropage
 current_row_width: .res 1
@@ -26,6 +28,176 @@ loop:
   INX
   CPX #LEVEL_LENGTH*LEVEL_ROW_SIZE
   BCC loop
+  RTS
+.endproc
+
+; update the RAM level data with random new values
+.proc level_update
+  current_row := locals+0
+  LDA camera_y+1
+  SEC
+  SBC #SCROLL_SEAM_OFFSET
+  ; handle wraparound
+  BCS :+
+    CLC
+    ADC #LEVEL_LENGTH
+  :
+  STA current_row
+
+  ; multiply by 4 to get its offset in the level data
+  LSHIFT 2
+  TAX
+  ; TODO generate tile data randomly
+  LDA #$09
+  STA level,x
+  INX
+  
+  LDA #$16
+  STA level,x
+  INX
+  
+  LDA #$00
+  STA level,x
+  INX
+
+  LDA #$00
+  STA level,x
+
+  RTS
+.endproc
+
+; draw the next row at the scroll seam
+.proc level_draw_row
+  current_row_offset := locals+0
+  ppu_addr := locals+1 ; 2 bytes, big endian
+  current_row_road_start := locals+3
+  current_row_road_end := locals+4
+  current_row_flags := locals+5
+
+  LDA camera_y+1
+  SEC
+  SBC #SCROLL_SEAM_OFFSET
+  ; handle wraparound
+  BCS :+
+    CLC
+    ADC #LEVEL_LENGTH
+  :
+  LSHIFT 2
+  STA current_row_offset
+  TAY
+
+  VRAM_BUFFER_BEGIN
+  VRAM_BUFFER_SET_DATA_LENGTH #LEVEL_TOTAL_WIDTH
+
+  ; compute nametable addr
+  LDA #$00
+  STA ppu_addr+0
+  STA ppu_addr+1
+
+  TYA
+  CMP #LEVEL_TOTAL_BYTES/2
+  BCC :+
+    SEC
+    SBC #LEVEL_TOTAL_BYTES/2
+:
+
+  ; mul 8, 16 bit result
+  ASL
+  ROL ppu_addr+0
+  ASL
+  ROL ppu_addr+0
+  ASL
+  ROL ppu_addr+0
+  STA ppu_addr+1
+
+  ; add base nametable address
+  LDA ppu_addr+0
+  CPY #LEVEL_LENGTH/2*4
+  BCS :+
+    ; less than 30
+    CLC
+    ADC #$20
+    JMP store_ppu_addr
+  :
+  CLC
+  ADC #$28
+store_ppu_addr:
+  STA ppu_addr+0
+
+  VRAM_BUFFER_SET_NAMETABLE_POS ppu_addr
+
+  LDA level,y
+  STA current_row_road_start
+  INY
+  LDA level,y
+  STA current_row_road_end
+  INY
+  LDA level,y
+  STA current_row_flags
+
+  LDA #$00
+  STA current_row_offset
+
+loop_draw_row:
+  JSR draw_road_tile ; must remember registers
+
+  INC current_row_offset
+  LDA current_row_offset
+  CMP #LEVEL_TOTAL_WIDTH
+  BCC loop_draw_row
+  RTS
+.endproc
+
+.proc draw_road_tile
+  current_row_offset := locals+0
+  ppu_addr := locals+1 ; 2 bytes, big endian
+  current_row_road_start := locals+3
+  current_row_road_end := locals+4
+  current_row_flags := locals+5
+
+  LDA current_row_offset
+  CMP current_row_road_start
+  BEQ draw_road_edge_left
+  BCC draw_grass
+  CMP current_row_road_end
+  BEQ draw_road_edge_right
+  BCS draw_grass
+draw_road:
+  LDA #$3D ; road
+  JMP done
+draw_road_edge_left:
+  LDA current_row_flags
+  AND #LevelFlags::DRAW_LEFT_SLANT_LEFT
+  BEQ :+
+    LDA #$BC
+    JMP done
+  :
+  AND #LevelFlags::DRAW_LEFT_SLANT_RIGHT
+  BEQ :+
+    LDA #$BD
+    JMP done
+  :
+  LDA #$3E ; road left edge
+  JMP done
+draw_road_edge_right:
+  LDA current_row_flags
+  AND #LevelFlags::DRAW_RIGHT_SLANT_LEFT
+  BEQ :+
+    LDA #$BF
+    JMP done
+  :
+  AND #LevelFlags::DRAW_RIGHT_SLANT_RIGHT
+  BEQ :+
+    LDA #$BE
+    JMP done
+  :
+  LDA #$3F ; road right edge
+  JMP done
+
+draw_grass:
+  LDA #$3C ; grass
+done:
+  VRAM_BUFFER_WRITE_A
   RTS
 .endproc
 
@@ -187,10 +359,8 @@ draw_grass:
   LDA #$3C ; grass
 inc_row_offset:
   STA PPUDATA
+  INC current_row_offset
   LDA current_row_offset
-  CLC
-  ADC #$01
-  STA current_row_offset
   CMP #LEVEL_TOTAL_WIDTH
   BCC loop_draw_row
   RTS
