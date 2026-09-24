@@ -42,13 +42,46 @@ player_vel_y: .res 2
     JSR player_decel
   :
 
+  LDA pad1_pressed
+  AND #BTN_LEFT
+  BEQ :+
+    JSR player_accel_left
+    JMP limit_vel_y
+  :
+check_right:
+  LDA pad1_pressed
+  AND #BTN_RIGHT
+  BEQ :+
+    JSR player_accel_right
+    JMP limit_vel_y
+  : 
+
+decel_x:
+  LDA player_vel_x+1
+  BPL :+
+    JSR player_decel_left
+    JMP limit_vel_y
+  :
+  JSR player_decel_right
+
+limit_vel_y:
   LDA player_vel_y+1
   BPL :+
     JSR player_limit_vel_neg
+    JMP limit_vel_x
+  :
+
+  JSR player_limit_vel_pos
+
+limit_vel_x:
+  LDA player_vel_x+1
+  BPL :+
+    JSR player_limit_vel_left
     JMP move
   :
-  JSR player_limit_vel_pos
+  JSR player_limit_vel_right
 move:
+  JSR player_move_x
   JSR player_move_y
 
   LDA player_y+1
@@ -60,16 +93,6 @@ move:
     STA player_y+1
   :
 
-  LDA pad1_pressed
-  AND #BTN_LEFT
-  BEQ :+
-    JSR player_move_left
-  :
-  LDA pad1_pressed
-  AND #BTN_RIGHT
-  BEQ :+
-    JSR player_move_right
-  : 
   RTS
 .endproc
 
@@ -94,6 +117,77 @@ move:
   STA player_vel_y+1
   RTS
 .endproc
+
+.proc player_accel_left
+  LDA player_vel_x
+  SEC
+  SBC #<PLAYER_ACCEL_X
+  STA player_vel_x
+  LDA player_vel_x+1
+  SBC #>PLAYER_ACCEL_X
+  STA player_vel_x+1
+
+  ; if the car wasn't moving forward much, start accelerating it now
+  ; we're currently ignoring the high byte, because it's 0 for the constant
+  LDA player_vel_y
+  CMP #PLAYER_MAX_TURN_VEL
+  BCS done
+
+  JSR player_accel
+
+done:
+  RTS
+.endproc
+
+.proc player_accel_right
+  LDA player_vel_x
+  CLC
+  ADC #<PLAYER_ACCEL_X
+  STA player_vel_x
+  LDA player_vel_x+1
+  ADC #>PLAYER_ACCEL_X
+  STA player_vel_x+1
+  RTS
+.endproc
+
+.proc player_decel_left
+  LDA player_vel_x
+  CLC
+  ADC #<PLAYER_X_DRAG
+  STA player_vel_x
+  LDA player_vel_x+1
+  ADC #>PLAYER_X_DRAG
+  STA player_vel_x+1
+  ; check if we've switched sides and set to 0 if so
+  LDA player_vel_x+1
+  BMI done
+set_vel_0:
+  LDA #$00
+  STA player_vel_x
+  STA player_vel_x+1
+done:
+  RTS
+.endproc
+
+.proc player_decel_right
+  LDA player_vel_x
+  SEC
+  SBC #<PLAYER_X_DRAG
+  STA player_vel_x
+  LDA player_vel_x+1
+  SBC #>PLAYER_X_DRAG
+  STA player_vel_x+1
+  ; check if we've switched sides and set to 0 if so
+  LDA player_vel_x+1
+  BPL done
+set_vel_0:
+  LDA #$00
+  STA player_vel_x
+  STA player_vel_x+1
+done:
+  RTS
+.endproc
+
 
 .proc player_limit_vel_pos
   LDA player_vel_y+1
@@ -133,6 +227,55 @@ done:
   RTS
 .endproc
 
+.proc player_limit_vel_left
+  LDA player_vel_x+1
+  CMP #>-PLAYER_MAX_VEL_X
+  BEQ compare_lsb
+  BCS set_max_vel
+  JMP done
+compare_lsb:
+  LDA player_vel_x
+  CMP #<-PLAYER_MAX_VEL_X
+  BCS done
+set_max_vel:
+  LDA #<-PLAYER_MAX_VEL_X
+  STA player_vel_x
+  LDA #>-PLAYER_MAX_VEL_X
+  STA player_vel_x+1
+done:
+  RTS
+.endproc
+
+.proc player_limit_vel_right
+  LDA player_vel_x+1
+  CMP #>PLAYER_MAX_VEL_X
+  BEQ compare_lsb
+  BCS set_max_vel
+  JMP done
+compare_lsb:
+  LDA player_vel_x
+  CMP #<PLAYER_MAX_VEL_X
+  BCC done
+set_max_vel:
+  LDA #<PLAYER_MAX_VEL_X
+  STA player_vel_x
+  LDA #>PLAYER_MAX_VEL_X
+  STA player_vel_x+1
+done:
+  RTS
+.endproc
+
+.proc player_move_x
+  LDA player_x
+  CLC
+  ADC player_vel_x
+  STA player_x
+  LDA player_x+1
+  ADC player_vel_x+1
+  STA player_x+1
+  RTS
+.endproc
+
 .proc player_move_y
   LDA player_y
   CLC
@@ -144,27 +287,7 @@ done:
   RTS
 .endproc
 
-.proc player_move_left
-  LDA player_x
-  SEC
-  SBC #<PLAYER_VEL_X
-  STA player_x
-  LDA player_x+1
-  SBC #>PLAYER_VEL_X
-  STA player_x+1
-  RTS
-.endproc
 
-.proc player_move_right
-  LDA player_x
-  CLC
-  ADC #<PLAYER_VEL_X
-  STA player_x
-  LDA player_x+1
-  ADC #>PLAYER_VEL_X
-  STA player_x+1
-  RTS
-.endproc
 
 .proc player_get_screen_coords
   player_x_camera := locals+0 ; 2 bytes

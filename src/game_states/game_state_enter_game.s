@@ -27,15 +27,19 @@
   JSR level_draw_initial
   JSR draw_initial_chr_space
 
-  LDA #GameStates::GAME
-  JSR set_game_state
+
 
   LDA game_status_flags
   AND #<~GameStatusFlags::NMI_SKIP_SCROLL
   STA game_status_flags
 
+
+
   LDA #%00011110
   STA ppumask_settings
 
+  LDA #GameStates::GAME
+  JSR set_game_state
+  
   RTS
 .endproc

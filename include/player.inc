@@ -5,9 +5,13 @@ PLAYER_MAX_VEL_Y = $00FF
 PLAYER_ACCEL = $0002
 
 PLAYER_INITIAL_POS_X = $0F00
-PLAYER_INITIAL_POS_Y = $3A00
+PLAYER_INITIAL_POS_Y = $39FF
 
-PLAYER_VEL_X = $0020
+PLAYER_ACCEL_X = $0009
+PLAYER_MAX_VEL_X = $0030
+PLAYER_X_DRAG  = $000A
+
+PLAYER_MAX_TURN_VEL = $0020 ; the max forward velocity when driving sideways
 
 .zeropage
 .globalzp player_x, player_y
