@@ -25,6 +25,7 @@ scroll_y: .res 1
   STA camera_vel_y+1
   STA scroll_x
   STA scroll_y
+  JSR camera_update
   RTS
 .endproc
 

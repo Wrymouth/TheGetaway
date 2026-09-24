@@ -16,3 +16,6 @@ PLAYER_VEL_X = $0020
 .global player_init
 .global player_update
 .global player_draw
+.global player_chr_idle_0
+.global player_chr_idle_1
+.global player_chr_idle_2

@@ -3,6 +3,7 @@
 .include "camera.inc"
 .include "player.inc"
 .include "level.inc"
+.include "chr_allocator.inc"
 
 .proc game_state_game
   LDA game_status_flags
@@ -16,7 +17,8 @@
   JSR camera_update
   JSR level_update
 
-  JSR player_draw
   JSR level_draw_row
+  JSR write_chr_row
+  JSR player_draw
   RTS
 .endproc

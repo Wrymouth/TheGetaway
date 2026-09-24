@@ -1,5 +1,6 @@
 .include "common.inc"
 .include "sprites.inc"
+.include "chr_allocator.inc"
 
 .zeropage
 oam_current_index: .res 1
@@ -90,6 +91,7 @@ draw:
 
 ; all locals are args
 .proc draw_sprite_dynamic
+  real_tile := locals+0
   size := locals+10
   sprite_x := locals+11
   sprite_y := locals+12
@@ -107,6 +109,8 @@ draw:
   INY
 
   LDA (sprite_ptr),y
+  JSR get_chr_tile_index
+  LDA real_tile
   STA $0201,x
   INY
   

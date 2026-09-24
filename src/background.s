@@ -64,16 +64,12 @@ process_string:
   STA vram_buffer_jump+2
   JMP vram_buffer_jump
 
-
-
-
 draw_tiles:
   .repeat 32
     PLA
     STA PPUDATA
   .endrepeat
   JMP process_string
-
 
 done:
   LDX vram_buffer_saved_stack_ptr

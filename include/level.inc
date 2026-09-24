@@ -17,13 +17,19 @@ SCROLL_SEAM_OFFSET = $02
 ; 1 byte - reserved
 
 .enum LevelFlags
-  DRAW_LEFT_SLANT_LEFT = $80
-  DRAW_RIGHT_SLANT_LEFT = $40
-  DRAW_LEFT_SLANT_RIGHT = $20
+  DRAW_LEFT_SLANT_LEFT   = $80
+  DRAW_RIGHT_SLANT_LEFT  = $40
+  DRAW_LEFT_SLANT_RIGHT  = $20
   DRAW_RIGHT_SLANT_RIGHT = $10
+  ROW_CONTAINS_CHR       = $08
 .endenum
 
+.segment "LEVEL" :bss :mem $0300 :size $0100
+.global level
+
 .code
+
+.global does_row_contain_chr
 
 .global level_init
 .global level_update

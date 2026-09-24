@@ -2,6 +2,7 @@
 .include "game_states.inc"
 .include "player.inc"
 .include "level.inc"
+.include "chr_allocator.inc"
 
 .proc game_state_enter_game
   LDA game_status_flags
@@ -12,15 +13,26 @@
     STA game_status_flags
   :
 
-  ; initialize level RAM to just straight roads for two screens
-  ; draw initial background from level RAM and write CHR data
-  JSR level_init
-  JSR level_draw_initial
-  JSR camera_init
   JSR player_init
+  JSR camera_init
+  ; initialize level RAM to just straight roads for two screens
+  JSR level_init
+  JSR chr_allocator_init
+
+  LDA game_status_flags
+  ORA #GameStatusFlags::NMI_SKIP_SCROLL
+  STA game_status_flags
+
+  ; draw initial background from level RAM and write CHR data
+  JSR level_draw_initial
+  JSR draw_initial_chr_space
 
   LDA #GameStates::GAME
   JSR set_game_state
+
+  LDA game_status_flags
+  AND #<~GameStatusFlags::NMI_SKIP_SCROLL
+  STA game_status_flags
 
   LDA #%00011110
   STA ppumask_settings

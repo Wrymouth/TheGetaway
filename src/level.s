@@ -2,6 +2,7 @@
 .include "level.inc"
 .include "camera.inc"
 .include "background.inc"
+.include "chr_allocator.inc"
 
 .zeropage
 current_row_width: .res 1
@@ -21,6 +22,7 @@ loop:
   STA level+1,x
   LDA #$00
   STA level+2,x
+  LDA #$00
   STA level+3,x
   INX
   INX
@@ -57,6 +59,7 @@ loop:
   INX
   
   LDA #$00
+  ORA level,x
   STA level,x
   INX
 
@@ -73,6 +76,12 @@ loop:
   current_row_road_start := locals+3
   current_row_road_end := locals+4
   current_row_flags := locals+5
+  chr_row := locals+6
+
+  ; compute nametable addr
+  LDA #$00
+  STA ppu_addr+0
+  STA ppu_addr+1
 
   LDA camera_y+1
   SEC
@@ -82,17 +91,29 @@ loop:
     CLC
     ADC #LEVEL_LENGTH
   :
+
+  STA chr_row
+
   LSHIFT 2
-  STA current_row_offset
   TAY
 
-  VRAM_BUFFER_BEGIN
-  VRAM_BUFFER_SET_DATA_LENGTH #LEVEL_TOTAL_WIDTH
+  LDA level+2,y ; flags for this row
+  AND #LevelFlags::ROW_CONTAINS_CHR
+  BEQ done
 
-  ; compute nametable addr
-  LDA #$00
-  STA ppu_addr+0
-  STA ppu_addr+1
+    ; the relevant row has been identified.
+    ; for the CHR allocator
+    ; report the current CHR tile occupying this
+    ; location.
+
+    JSR get_deleted_chr_tile ; clobbers A and X
+
+
+
+    ; if it contains CHR, it won't after this run
+    LDA level+2,y
+    AND #<~LevelFlags::ROW_CONTAINS_CHR
+    STA level+2,y
 
   TYA
   CMP #LEVEL_TOTAL_BYTES/2
@@ -124,6 +145,8 @@ loop:
 store_ppu_addr:
   STA ppu_addr+0
 
+  VRAM_BUFFER_BEGIN
+  VRAM_BUFFER_SET_DATA_LENGTH #LEVEL_TOTAL_WIDTH
   VRAM_BUFFER_SET_NAMETABLE_POS ppu_addr
 
   LDA level,y
@@ -145,6 +168,8 @@ loop_draw_row:
   LDA current_row_offset
   CMP #LEVEL_TOTAL_WIDTH
   BCC loop_draw_row
+  VRAM_BUFFER_END
+done:
   RTS
 .endproc
 
@@ -230,6 +255,7 @@ loop_draw_bank_1:
   RTS
 .endproc
 
+; TODO do this during vblank instead
 .proc level_write_palettes
   LDA #$3F
   STA PPUADDR
@@ -254,10 +280,6 @@ loop_draw_bank_1:
 .endproc
 
 .proc level_draw_initial
-  LDA game_status_flags
-  ORA #GameStatusFlags::NMI_SKIP_SCROLL
-  STA game_status_flags
-
 ; determine nametable address from row index
 ; for each row:
 ; get row offset (in bytes) ASL 3 (multiply by 8)
@@ -275,10 +297,6 @@ draw_row:
 
   JSR level_write_palettes
   JSR level_write_chr
-
-  LDA game_status_flags
-  AND #<~GameStatusFlags::NMI_SKIP_SCROLL
-  STA game_status_flags
   RTS
 .endproc
 

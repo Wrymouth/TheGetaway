@@ -255,10 +255,18 @@ player_sprites:
 
 player_sprite_idle:
 .byte 24 ; size
-NEXXT_SPRITE 0,   0,$00,2
-NEXXT_SPRITE 0,  16,$02,2
-NEXXT_SPRITE 0,   8,$01,2
-NEXXT_SPRITE 8,   8,$01,2|OAM_FLAG_FLIP_H
-NEXXT_SPRITE 8,   0,$00,2|OAM_FLAG_FLIP_H
-NEXXT_SPRITE 8,  16,$02,2|OAM_FLAG_FLIP_H
+NEXXT_SPRITE 0,   0,$00,0
+NEXXT_SPRITE 8,   0,$00,0|OAM_FLAG_FLIP_H
+NEXXT_SPRITE 0,   8,$01,0
+NEXXT_SPRITE 8,   8,$01,0|OAM_FLAG_FLIP_H
+NEXXT_SPRITE 0,  16,$02,0
+NEXXT_SPRITE 8,  16,$02,0|OAM_FLAG_FLIP_H
 
+player_chr:
+
+player_chr_idle_0:
+  .incbin "player/player_idle_0.chr"
+player_chr_idle_1:
+  .incbin "player/player_idle_1.chr"
+player_chr_idle_2:
+  .incbin "player/player_idle_2.chr"
