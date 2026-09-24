@@ -1,4 +1,4 @@
-NUM_CHR_TILES = 52
+NUM_CHR_TILES = 56
 
 CHR_TILE_SIZE = 16 ; bytes
 
