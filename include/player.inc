@@ -11,7 +11,7 @@ PLAYER_ACCEL_X = $0009
 PLAYER_MAX_VEL_X = $0030
 PLAYER_X_DRAG  = $000A
 
-PLAYER_MAX_TURN_VEL = $0020 ; the max forward velocity when driving sideways
+PLAYER_MAX_TURN_VEL = PLAYER_MAX_VEL_X ; the max forward velocity when driving sideways
 
 .zeropage
 .globalzp player_x, player_y

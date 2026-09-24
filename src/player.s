@@ -129,10 +129,17 @@ move:
 
   ; if the car wasn't moving forward much, start accelerating it now
   ; we're currently ignoring the high byte, because it's 0 for the constant
+  LDA player_vel_y+1
+  BEQ accel
+  CMP #>-PLAYER_MAX_TURN_VEL
+  BEQ compare_lsb
+  BCS accel
+  JMP done
+compare_lsb:
   LDA player_vel_y
-  CMP #PLAYER_MAX_TURN_VEL
-  BCS done
-
+  CMP #<-PLAYER_MAX_TURN_VEL
+  BCC done
+accel:
   JSR player_accel
 
 done:
@@ -147,6 +154,22 @@ done:
   LDA player_vel_x+1
   ADC #>PLAYER_ACCEL_X
   STA player_vel_x+1
+
+  ; if the car wasn't moving forward much, start accelerating it now
+  ; we're currently ignoring the high byte, because it's 0 for the constant
+  LDA player_vel_y+1
+  BEQ accel
+  CMP #>-PLAYER_MAX_TURN_VEL
+  BEQ compare_lsb
+  BCS accel
+  JMP done
+compare_lsb:
+  LDA player_vel_y
+  CMP #<-PLAYER_MAX_TURN_VEL
+  BCC done
+accel:
+  JSR player_accel
+done:
   RTS
 .endproc
 
