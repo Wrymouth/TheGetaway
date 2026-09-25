@@ -4,15 +4,16 @@
 .include "sprites.inc"
 .include "camera.inc"
 .include "background.inc"
-
-.import handle_input_pad1
+.include "random.inc"
 
 .zeropage
   locals: .res 16
-  sleeping: .res 1
   game_status_flags: .res 1
   ppuctrl_settings: .res 1
   ppumask_settings: .res 1
+  timer: .res 2
+  
+  sleeping: .res 1
 .code
 
 .proc reset
@@ -93,15 +94,26 @@ done:
 .proc main
   LDA #$00
   STA buffer_idx
-  LDA #GameStates::ENTER_GAME
+  STA game_status_flags
+  STA timer+0
+  STA timer+1
+  LDA #GameStates::TITLE
   JSR set_game_state
+  
 main_loop:
   JSR clear_vram_buffer
   JSR clear_oam
   JSR set_dynamic_oam_direction
+
+  LDA timer+0
+  STA rand_seed+0
+  LDA timer+1
+  STA rand_seed+1
+  JSR get_rand_byte
+
   JSR handle_input_pad1
   JSR do_game_state
-set_sleeping:
+
   INC sleeping
 sleep:
   LDA sleeping
