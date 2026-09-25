@@ -257,25 +257,25 @@ loop_draw_bank_1:
 
 ; TODO do this during vblank instead
 .proc level_write_palettes
-  LDA #$3F
-  STA PPUADDR
-  LDA #$00
-  STA PPUADDR
+  VRAM_BUFFER_BEGIN
+  VRAM_BUFFER_SET_DATA_LENGTH #32
+  VRAM_BUFFER_SET_NAMETABLE_BYTES #$3F, #$00
   .repeat 4
+
     LDA bg_palette+0
-    STA PPUDATA
+    VRAM_BUFFER_WRITE_A
     LDA bg_palette+1
-    STA PPUDATA
+    VRAM_BUFFER_WRITE_A
     LDA bg_palette+2
-    STA PPUDATA
+    VRAM_BUFFER_WRITE_A
     LDA bg_palette+3
-    STA PPUDATA
+    VRAM_BUFFER_WRITE_A
   .endrepeat
   .repeat 16, i
     LDA sprite_palettes+i
-    STA PPUDATA
+    VRAM_BUFFER_WRITE_A
   .endrepeat
-
+  VRAM_BUFFER_END
   RTS
 .endproc
 
@@ -295,7 +295,6 @@ draw_row:
   CPX #LEVEL_LENGTH*LEVEL_ROW_SIZE
   BCC draw_row
 
-  JSR level_write_palettes
   JSR level_write_chr
   RTS
 .endproc

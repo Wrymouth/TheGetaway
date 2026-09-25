@@ -91,6 +91,8 @@ done:
 .endproc
 
 .proc main
+  LDA #$00
+  STA buffer_idx
   LDA #GameStates::ENTER_GAME
   JSR set_game_state
 main_loop:

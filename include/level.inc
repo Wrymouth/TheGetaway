@@ -36,3 +36,4 @@ SCROLL_SEAM_OFFSET = $01
 .global level_draw_row
 
 .global level_draw_initial
+.global level_write_palettes

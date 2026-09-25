@@ -38,6 +38,9 @@
   LDA #%00011110
   STA ppumask_settings
 
+  JSR level_write_palettes
+  
+
   LDA #GameStates::GAME
   JSR set_game_state
   
