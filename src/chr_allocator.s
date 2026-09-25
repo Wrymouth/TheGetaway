@@ -70,20 +70,17 @@ loop_zero_out_pointers:
 
   LDY #$00 ; Y contains source tile to draw there
 draw_row:
-  ; PUSH_X
   TXA
-  PHA
-
-  ASL ; multiply by 2 to get the level data offset
+  LSR
   TAX
-  LDA level+2,x ; flags
+  LDA level_flags,x ; flags
   ORA #LevelFlags::ROW_CONTAINS_CHR
-  STA level+2,x
+  STA level_flags,x
 
-  ; PULL_X
-  PLA
+  TXA
+  ASL ; mult by 2 to go to CHR tile location
   TAX
-  ; this hits the attr region. that needs to be fixed next
+
   JSR draw_chr_tile_directly
   INX
   INY
@@ -181,32 +178,30 @@ draw:
     SEC
     SBC #LEVEL_LENGTH
   :
+  TAY
   ASL
   STA dest_tile
-  ASL
-  STA temp_ppu_addr
 
   ; should we even be drawing here?
-  TAY
-  INY
-  INY
-  LDA level,y
+  LDA level_flags,y
   AND #LevelFlags::ROW_CONTAINS_CHR
   BNE done
 
   ; if the row does not contain CHR, it will now
-  LDA level,y
+  LDA level_flags,y
   ORA #LevelFlags::ROW_CONTAINS_CHR
-  STA level,y
+  STA level_flags,y
 
-  LDA temp_ppu_addr
-  CMP #LEVEL_TOTAL_BYTES/2
+  LDA dest_tile
+  CMP #LEVEL_LENGTH
   BCC :+
     SEC
-    SBC #LEVEL_TOTAL_BYTES/2
+    SBC #LEVEL_LENGTH
 :
   
   ; mul 8, 16 bit result
+  ASL
+  ROL ppu_addr+0
   ASL
   ROL ppu_addr+0
   ASL
@@ -217,7 +212,7 @@ draw:
 
   ; add base nametable address
   LDA ppu_addr+0
-  CPY #LEVEL_LENGTH/2*4
+  CPY #LEVEL_LENGTH/2
   BCS :+
     ; less than 30
     CLC

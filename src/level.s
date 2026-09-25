@@ -3,32 +3,45 @@
 .include "camera.inc"
 .include "background.inc"
 .include "chr_allocator.inc"
+.include "random.inc"
 
 .zeropage
 current_row_width: .res 1
 current_row_start: .res 1
 
 .segment "LEVEL" :bss :mem $0300 :size $0100
-level: .res 240
+level_start: .res 60
+level_end: .res 60
+level_flags: .res 60
+level_reserved: .res 60
 
 .code
 .proc level_init
   ; initialize the level as a single long straight road
   LDX #$00
+  LDA #INITIAL_ROAD_START
+  STA current_row_start
+  LDA #INITIAL_ROAD_WIDTH
+  STA current_row_width
 loop:
-  LDA #9
-  STA level+0,x
-  LDA #22
-  STA level+1,x
+  LDA current_row_start
+  STA level_start,x
+  LDA current_row_start
+  CLC
+  ADC current_row_width
+  ; handle wraparound
+  CMP #LEVEL_TOTAL_WIDTH
+  BCC :+
+    SEC
+    SBC #LEVEL_TOTAL_WIDTH
+  :
+  STA level_end,x
   LDA #$00
-  STA level+2,x
+  STA level_flags,x
   LDA #$00
-  STA level+3,x
+  STA level_reserved,x
   INX
-  INX
-  INX
-  INX
-  CPX #LEVEL_LENGTH*LEVEL_ROW_SIZE
+  CPX #LEVEL_LENGTH
   BCC loop
   RTS
 .endproc
@@ -36,6 +49,10 @@ loop:
 ; update the RAM level data with random new values
 .proc level_update
   current_row := locals+0
+  row_flags := locals+3
+
+  LDA #$00
+  STA row_flags
   LDA camera_y+1
   SEC
   SBC #SCROLL_SEAM_OFFSET
@@ -46,26 +63,63 @@ loop:
   :
   STA current_row
 
-  ; multiply by 4 to get its offset in the level data
-  LSHIFT 2
   TAX
+
+  ; has this row already been generated?
+  LDA level_flags,x ; flags
+  AND #LevelFlags::ROW_WAS_GENERATED
+  BNE done
+
+
+  ; JSR generate_random_level_data
   ; TODO generate tile data randomly
-  LDA #$09
-  STA level,x
-  INX
+  LDA current_row_start
+  STA level_start,x
   
-  LDA #$16
-  STA level,x
-  INX
+  LDA current_row_start
+  CLC
+  ADC current_row_width
+  ; handle wraparound
+  CMP #LEVEL_TOTAL_WIDTH
+  BCC :+
+    SEC
+    SBC #LEVEL_TOTAL_WIDTH
+  :
+  STA level_end,x
   
-  LDA #$00
-  ORA level,x
-  STA level,x
-  INX
+  LDA level_flags,x
+  AND #LevelFlags::ROW_CONTAINS_CHR
+  ORA row_flags
+  ORA #LevelFlags::ROW_WAS_GENERATED
+  STA level_flags,x
 
   LDA #$00
-  STA level,x
+  STA level_reserved,x
 
+  ; unset the "generated" flag for the previous row
+  INX
+  LDA level_flags,x
+  AND #<~LevelFlags::ROW_WAS_GENERATED
+  STA level_flags,x
+done:  
+  RTS
+.endproc
+
+; format:
+; bottom 2 bytes are used for 
+.proc generate_random_level_data
+  current_row := locals+0
+
+  JSR get_rand_byte
+
+  ; 1/32 chance of a road change
+  LDA rand_value
+  AND #%00011111
+  CMP #%00011111
+  BNE unchanged
+
+unchanged:
+  LDA current_row_start
   RTS
 .endproc
 
@@ -93,11 +147,9 @@ loop:
   :
 
   STA chr_row
-
-  LSHIFT 2
   TAY
 
-  LDA level+2,y ; flags for this row
+  LDA level_flags,y ; flags for this row
   AND #LevelFlags::ROW_CONTAINS_CHR
   BEQ done
 
@@ -111,18 +163,22 @@ loop:
 
 
     ; if it contains CHR, it won't after this run
-    LDA level+2,y
+    LDA level_flags,y
     AND #<~LevelFlags::ROW_CONTAINS_CHR
-    STA level+2,y
+    STA level_flags,y
 
   TYA
-  CMP #LEVEL_TOTAL_BYTES/2
+  CMP #LEVEL_LENGTH/2
   BCC :+
     SEC
-    SBC #LEVEL_TOTAL_BYTES/2
-:
+    SBC #LEVEL_LENGTH/2
+  :
 
   ; mul 8, 16 bit result
+  ASL
+  ROL ppu_addr+0
+  ASL
+  ROL ppu_addr+0
   ASL
   ROL ppu_addr+0
   ASL
@@ -133,7 +189,7 @@ loop:
 
   ; add base nametable address
   LDA ppu_addr+0
-  CPY #LEVEL_LENGTH/2*4
+  CPY #LEVEL_LENGTH/2
   BCS :+
     ; less than 30
     CLC
@@ -149,13 +205,11 @@ store_ppu_addr:
   VRAM_BUFFER_SET_DATA_LENGTH #LEVEL_TOTAL_WIDTH
   VRAM_BUFFER_SET_NAMETABLE_POS ppu_addr
 
-  LDA level,y
+  LDA level_start,y
   STA current_row_road_start
-  INY
-  LDA level,y
+  LDA level_end,y
   STA current_row_road_end
-  INY
-  LDA level,y
+  LDA level_flags,y
   STA current_row_flags
 
   LDA #$00
@@ -289,10 +343,7 @@ loop_draw_bank_1:
 draw_row:
   JSR level_draw_row_directly
   INX
-  INX
-  INX
-  INX
-  CPX #LEVEL_LENGTH*LEVEL_ROW_SIZE
+  CPX #LEVEL_LENGTH
   BCC draw_row
 
   JSR level_write_chr
@@ -310,12 +361,16 @@ draw_row:
   STA ppu_addr+1
   
   TXA
-  CMP #LEVEL_TOTAL_BYTES/2
+  CMP #LEVEL_LENGTH/2
   BCC :+
     SEC
-    SBC #LEVEL_TOTAL_BYTES/2
+    SBC #LEVEL_LENGTH/2
 :
-  ; mul 8, 16 bit result
+  ; mul 32, 16 bit result
+  ASL
+  ROL ppu_addr+0
+  ASL
+  ROL ppu_addr+0
   ASL
   ROL ppu_addr+0
   ASL
@@ -326,7 +381,7 @@ draw_row:
 
   ; add base nametable address
   LDA ppu_addr+0
-  CPX #LEVEL_LENGTH/2*4
+  CPX #LEVEL_LENGTH/2
   BCS :+
     ; less than 30
     CLC
@@ -346,20 +401,18 @@ store_ppu_addr:
   ; now DRAW
   ; "inverted" check not necessary, it's guaranteed to not be the case on initial draw (for now, anyway)
   ; draw grass until "road start"
-  LDA level,x
+  LDA level_start,x
   STA current_row_road_start
-  LDA level+1,x
+  LDA level_end,x
   STA current_row_road_end
 
-  LDA #$00
-  STA current_row_offset
+  LDY #$00
 
 loop_draw_row:
-  LDA current_row_offset
-  CMP current_row_road_start
+  CPY current_row_road_start
   BEQ draw_road_left
   BCC draw_grass
-  CMP current_row_road_end
+  CPY current_row_road_end
   BEQ draw_road_right
   BCS draw_grass
 draw_road:
@@ -376,9 +429,8 @@ draw_grass:
   LDA #$3C ; grass
 inc_row_offset:
   STA PPUDATA
-  INC current_row_offset
-  LDA current_row_offset
-  CMP #LEVEL_TOTAL_WIDTH
+  INY
+  CPY #LEVEL_TOTAL_WIDTH
   BCC loop_draw_row
   RTS
 .endproc
