@@ -114,6 +114,10 @@ main_loop:
   JSR handle_input_pad1
   JSR do_game_state
 
+  INC timer+0
+  BNE set_sleeping
+  INC timer+1
+set_sleeping:
   INC sleeping
 sleep:
   LDA sleeping
