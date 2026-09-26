@@ -13,7 +13,6 @@ current_row_start: .res 1
 level_start: .res 60
 level_end: .res 60
 level_flags: .res 60
-level_reserved: .res 60
 
 .code
 .proc level_init
@@ -38,8 +37,6 @@ loop:
   STA level_end,x
   LDA #$00
   STA level_flags,x
-  LDA #$00
-  STA level_reserved,x
   INX
   CPX #LEVEL_LENGTH
   BCC loop
@@ -48,8 +45,9 @@ loop:
 
 ; update the RAM level data with random new values
 .proc level_update
-  current_row := locals+0
-  row_flags := locals+3
+  row_width := locals+0
+  row_flags := locals+1
+  current_instruction := locals+2
 
   LDA #$00
   STA row_flags
@@ -61,8 +59,6 @@ loop:
     CLC
     ADC #LEVEL_LENGTH
   :
-  STA current_row
-
   TAX
 
   ; has this row already been generated?
@@ -70,21 +66,22 @@ loop:
   AND #LevelFlags::ROW_WAS_GENERATED
   BNE done
 
+  JSR generate_random_level_data_pre
 
-  ; JSR generate_random_level_data
-  ; TODO generate tile data randomly
   LDA current_row_start
   STA level_start,x
   
+  ; standard row width adjust
   LDA current_row_start
   CLC
-  ADC current_row_width
+  ADC row_width ; the persistent road_width will be set in the generate routine
   ; handle wraparound
   CMP #LEVEL_TOTAL_WIDTH
   BCC :+
     SEC
     SBC #LEVEL_TOTAL_WIDTH
   :
+
   STA level_end,x
   
   LDA level_flags,x
@@ -93,11 +90,14 @@ loop:
   ORA #LevelFlags::ROW_WAS_GENERATED
   STA level_flags,x
 
-  LDA #$00
-  STA level_reserved,x
+  JSR generate_random_level_data_post
 
   ; unset the "generated" flag for the previous row
   INX
+  CPX #LEVEL_LENGTH
+  BCC :+
+    LDX #$00
+  :
   LDA level_flags,x
   AND #<~LevelFlags::ROW_WAS_GENERATED
   STA level_flags,x
@@ -106,22 +106,215 @@ done:
 .endproc
 
 ; format:
-; bottom 2 bytes are used for 
-.proc generate_random_level_data
-  current_row := locals+0
+; top 5 bits: equal to %11111000 means a road change will happen
+; bottom 2 bits: determine what will happen in this road change event
+.proc generate_random_level_data_pre
+  row_width := locals+0
+  row_flags := locals+1
+  current_instruction := locals+2
 
   JSR get_rand_byte
 
   ; 1/32 chance of a road change
   LDA rand_value
-  AND #%00011111
-  CMP #%00011111
-  BNE unchanged
+  STA current_instruction
+  AND #%11111000
+  CMP #%11111000
+  BNE no_change
 
-unchanged:
-  LDA current_row_start
+  ; time for a road change: two of the remaining three bits decide
+  LDA current_instruction
+  AND #%00000011
+  
+  CMP #LevelGenInstructions::VEER_LEFT
+  BEQ handle_veer_left_pre
+  CMP #LevelGenInstructions::VEER_RIGHT
+  BEQ handle_veer_right_pre
+  CMP #LevelGenInstructions::WIDEN
+  BEQ handle_widen_pre
+  CMP #LevelGenInstructions::THIN
+  BEQ handle_thin_pre
+
+no_change:
+  LDA current_row_width
+  STA row_width
   RTS
 .endproc
+
+.proc handle_veer_left_pre
+  row_width := locals+0
+  row_flags := locals+1
+  current_instruction := locals+2
+
+  LDA current_row_start
+  SEC
+  SBC #$01
+  ; handle wraparound
+  CMP #LEVEL_TOTAL_WIDTH
+  BCC :+
+    CLC
+    ADC #LEVEL_TOTAL_WIDTH
+  :
+  STA current_row_start
+
+  LDA current_row_width
+  CLC
+  ADC #$01 ; NOTE: assuming this will NEVER overflow, because MAX_WIDTH will be appropriately configured.
+  STA row_width
+
+  LDA row_flags
+  ORA #LevelFlags::DRAW_LEFT_SLANT_LEFT|LevelFlags::DRAW_RIGHT_SLANT_LEFT
+  STA row_flags
+  RTS
+.endproc
+
+.proc handle_veer_right_pre
+  row_width := locals+0
+  row_flags := locals+1
+  current_instruction := locals+2
+
+  LDA current_row_width
+  CLC
+  ADC #$01 ; NOTE: assuming this will NEVER overflow, because MAX_WIDTH will be appropriately configured.
+  STA row_width
+
+  LDA row_flags
+  ORA #LevelFlags::DRAW_LEFT_SLANT_RIGHT|LevelFlags::DRAW_RIGHT_SLANT_RIGHT
+  STA row_flags
+  RTS
+.endproc
+
+.proc handle_widen_pre
+  row_width := locals+0
+  row_flags := locals+1
+  current_instruction := locals+2
+
+  LDA current_row_width
+  CLC
+  ADC #$02
+  CMP #LEVEL_MAX_WIDTH ; TODO: make this variable based on ruleset
+  BEQ store
+  BCC store
+  ; if widen isn't possible, do a left turn instead
+  LDA #LevelGenInstructions::VEER_LEFT
+  STA current_instruction
+  JMP handle_veer_left_pre
+store:
+  STA current_row_width
+  STA row_width
+
+  LDA current_row_start
+  SEC
+  SBC #$01
+  ; handle wraparound
+  CMP #LEVEL_TOTAL_WIDTH
+  BCC :+
+    CLC
+    ADC #LEVEL_TOTAL_WIDTH
+  :
+  STA current_row_start
+
+  LDA row_flags
+  ORA #LevelFlags::DRAW_LEFT_SLANT_LEFT|LevelFlags::DRAW_RIGHT_SLANT_RIGHT
+  STA row_flags
+  RTS
+.endproc
+
+.proc handle_thin_pre
+  row_width := locals+0
+  row_flags := locals+1
+  current_instruction := locals+2
+
+  ; test whether the thinning is possible
+  LDA current_row_width
+  STA row_width
+  SEC
+  SBC #$02
+  CMP #LEVEL_MIN_WIDTH ; TODO: make this variable based on ruleset
+  BCS :+
+    LDA #LevelGenInstructions::VEER_RIGHT
+    STA current_instruction
+    JMP handle_veer_right_pre
+  :
+  ; do not store, that happens in post
+  LDA row_flags
+  ORA #LevelFlags::DRAW_LEFT_SLANT_RIGHT|LevelFlags::DRAW_RIGHT_SLANT_LEFT
+  STA row_flags
+
+  RTS
+.endproc
+
+; use the random value from earlier to apply changes to the road post-generation
+; used to more forgivingly handle road changes by not affecting collision
+.proc generate_random_level_data_post
+  row_width := locals+0
+  row_flags := locals+1
+  current_instruction := locals+2
+
+  LDA current_instruction
+  AND #%11111000
+  CMP #%11111000
+  BNE done
+
+  LDA current_instruction
+  AND #%00000011
+  
+  CMP #LevelGenInstructions::VEER_LEFT
+  BEQ done
+  CMP #LevelGenInstructions::VEER_RIGHT
+  BEQ handle_veer_right_post
+  CMP #LevelGenInstructions::WIDEN
+  BEQ done
+  CMP #LevelGenInstructions::THIN
+  BEQ handle_thin_post
+
+done:
+  RTS
+.endproc
+
+; no handle_veer_left_post or handle_widen_post, it would be empty
+
+.proc handle_veer_right_post
+  row_width := locals+0
+  row_flags := locals+1
+  current_instruction := locals+2
+  
+  LDA current_row_start
+  CLC
+  ADC #$01
+  CMP #LEVEL_TOTAL_WIDTH
+  BCC :+
+    SEC
+    SBC #LEVEL_TOTAL_WIDTH
+  :
+  STA current_row_start
+  RTS
+.endproc
+
+.proc handle_thin_post
+  row_width := locals+0
+  row_flags := locals+1
+  current_instruction := locals+2
+
+  ; the pre routine has already determined this to be safe
+  LDA current_row_width
+  SEC
+  SBC #$02
+  STA current_row_width
+
+  LDA current_row_start
+  CLC
+  ADC #$01
+  CMP #LEVEL_TOTAL_WIDTH
+  BCC :+
+    SEC
+    SBC #LEVEL_TOTAL_WIDTH
+  :
+  STA current_row_start
+
+  RTS
+.endproc
+
 
 ; draw the next row at the scroll seam
 .proc level_draw_row
@@ -223,6 +416,10 @@ loop_draw_row:
   CMP #LEVEL_TOTAL_WIDTH
   BCC loop_draw_row
   VRAM_BUFFER_END
+  ; now that we've drawn the road, clear the draw flags
+  LDA level_flags,y
+  AND #<~LevelFlags::DRAW_LEFT_SLANT_LEFT|LevelFlags::DRAW_LEFT_SLANT_RIGHT|LevelFlags::DRAW_RIGHT_SLANT_LEFT|LevelFlags::DRAW_RIGHT_SLANT_RIGHT
+  STA level_flags,y
 done:
   RTS
 .endproc
@@ -251,6 +448,7 @@ draw_road_edge_left:
     LDA #$BC
     JMP done
   :
+  LDA current_row_flags
   AND #LevelFlags::DRAW_LEFT_SLANT_RIGHT
   BEQ :+
     LDA #$BD
@@ -265,6 +463,7 @@ draw_road_edge_right:
     LDA #$BF
     JMP done
   :
+  LDA current_row_flags
   AND #LevelFlags::DRAW_RIGHT_SLANT_RIGHT
   BEQ :+
     LDA #$BE
