@@ -35,8 +35,8 @@ scroll_y: .res 1
   CAMERA_PLAYER_OFFSET_Y = $10
 
   camera_goal_x := locals+0 ; 1 byte, just msb
-  camera_goal_offset_x := locals+1 ; 1 byte
-  move_instantly:= locals+2
+  camera_goal_offset_x := locals+1 ; 2 bytes
+  move_instantly:= locals+3
 
   STA move_instantly
 
@@ -127,18 +127,21 @@ set_scroll:
 
 .proc camera_move_x
   camera_goal_x := locals+0 ; 1 byte, just msb
-  camera_goal_offset_x := locals+1 ; 1 byte
-  move_instantly:= locals+2
+  camera_goal_offset_x := locals+1 ; 2 bytes
+  move_instantly:= locals+3
   
   BNE set_camera_to_goal_x
 
   ; now, where is camera_goal_x relative to camera_x? is it to the left or to the right?
   ; camera_x(+1) will never be negative at this stage, because it will have been wrapped
   ; so if camera_goal_x is negative, we know it's to the left
-  LDA camera_goal_x
   SEC
-  SBC camera_x+1
+  LDA #$00
+  SBC camera_x
   STA camera_goal_offset_x
+  LDA camera_goal_x
+  SBC camera_x+1
+  STA camera_goal_offset_x+1
   BEQ done
   BCS positive
 negative:
