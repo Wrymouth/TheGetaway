@@ -142,13 +142,20 @@ set_scroll:
   LDA camera_goal_x
   SBC camera_x+1
   STA camera_goal_offset_x+1
+  BEQ check_lsb
+  BCS positive
+  JMP negative
+check_lsb:
+  LDA camera_goal_offset_x
   BEQ done
   BCS positive
 negative:
+  LDA camera_goal_offset_x+1
   CMP #-(LEVEL_TOTAL_WIDTH/2)
   BCS move_left
   JMP move_right
 positive:
+  LDA camera_goal_offset_x+1
   CMP #(LEVEL_TOTAL_WIDTH/2)
   BCS move_left
   JMP move_right
