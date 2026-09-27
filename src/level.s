@@ -200,10 +200,10 @@ no_change:
   CMP #LEVEL_MAX_WIDTH ; TODO: make this variable based on ruleset
   BEQ store
   BCC store
-  ; if widen isn't possible, do a left turn instead
-  LDA #LevelGenInstructions::VEER_LEFT-1
+  ; if widen isn't possible, thin instead
+  LDA #LevelGenInstructions::THIN-1
   STA current_instruction
-  JMP handle_veer_left_pre
+  JMP handle_thin_pre
 store:
   STA current_row_width
   STA row_width
@@ -238,9 +238,9 @@ store:
   SBC #$02
   CMP #LEVEL_MIN_WIDTH ; TODO: make this variable based on ruleset
   BCS :+
-    LDA #LevelGenInstructions::VEER_RIGHT-1
+    LDA #LevelGenInstructions::WIDEN-1
     STA current_instruction
-    JMP handle_veer_right_pre
+    JMP handle_widen_pre
   :
   ; do not store, that happens in post
   LDA row_flags
