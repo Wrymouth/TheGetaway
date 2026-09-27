@@ -62,7 +62,11 @@ scroll_y: .res 1
   ; camera is top left, so we want to place the camera X at road_start - half_grass
   ; alternatively, place the camera at road_start + (road_width/2) - 16
   LDX player_y+1
-  
+
+  LDA level_start,x
+  CMP level_end,x
+  BCS wrapped
+regular:  
   ; road width
   LDA level_end,x
   SEC
@@ -75,7 +79,23 @@ scroll_y: .res 1
   SEC
   SBC #LEVEL_TOTAL_WIDTH/2
   STA camera_goal_x
-
+  JMP set_camera_x
+wrapped:
+  ; road width
+  LDA level_end,x
+  CLC
+  ADC #LEVEL_TOTAL_WIDTH
+  SEC
+  SBC level_start,x
+  CLC
+  ADC #$01 ; road start inclusive
+  LSR ; div 2
+  CLC
+  ADC level_start,x
+  SEC
+  SBC #LEVEL_TOTAL_WIDTH/2
+  STA camera_goal_x
+set_camera_x:
   ; now, where is camera_goal_x relative to camera_x?
   LDA camera_goal_x
   STA camera_x+1
@@ -89,7 +109,6 @@ scroll_y: .res 1
     ADC camera_x+1
     STA camera_x+1
   :
-
 
   JSR camera_to_scroll
 

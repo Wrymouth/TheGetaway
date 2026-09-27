@@ -28,11 +28,13 @@ SCROLL_SEAM_OFFSET = $01
   ROW_WAS_GENERATED      = $04
 .endenum
 
+LEVEL_GEN_CHANGE_THRESHOLD = $F0
+
 .enum LevelGenInstructions
-  VEER_LEFT  = $00
-  VEER_RIGHT = $01
-  WIDEN      = $02
-  THIN       = $03
+  VEER_LEFT  = $40
+  VEER_RIGHT = $80
+  WIDEN      = $C0
+  THIN       = $00 ; $100, really
 .endenum
 
 .segment "LEVEL" :bss :mem $0300 :size $0100

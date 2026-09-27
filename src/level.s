@@ -47,7 +47,8 @@ loop:
 .proc level_update
   row_width := locals+0
   row_flags := locals+1
-  current_instruction := locals+2
+  change_road_data := locals+2
+  current_instruction := locals+3
 
   LDA #$00
   STA row_flags
@@ -111,29 +112,30 @@ done:
 .proc generate_random_level_data_pre
   row_width := locals+0
   row_flags := locals+1
-  current_instruction := locals+2
+  change_road_data := locals+2
+  current_instruction := locals+3
 
-  JSR get_rand_byte
+  JSR get_rand_byte ; first byte: does a road change happen at all?
 
   ; 1/32 chance of a road change
   LDA rand_value
-  STA current_instruction
-  AND #%11111000
-  CMP #%11111000
-  BNE no_change
+  CMP #LEVEL_GEN_CHANGE_THRESHOLD
+  STA change_road_data
+  BCC no_change
 
-  ; time for a road change: two of the remaining three bits decide
-  LDA current_instruction
-  AND #%00000011
-  
+  INC16_L rand_seed
+  JSR get_rand_byte ; second byte: what change?
+  LDA rand_value
+  STA current_instruction
+
   CMP #LevelGenInstructions::VEER_LEFT
-  BEQ handle_veer_left_pre
+  BCC handle_veer_left_pre
   CMP #LevelGenInstructions::VEER_RIGHT
-  BEQ handle_veer_right_pre
+  BCC handle_veer_right_pre
   CMP #LevelGenInstructions::WIDEN
-  BEQ handle_widen_pre
-  CMP #LevelGenInstructions::THIN
-  BEQ handle_thin_pre
+  BCC handle_widen_pre
+  
+  JMP handle_thin_pre
 
 no_change:
   LDA current_row_width
@@ -144,7 +146,8 @@ no_change:
 .proc handle_veer_left_pre
   row_width := locals+0
   row_flags := locals+1
-  current_instruction := locals+2
+  change_road_data := locals+2
+  current_instruction := locals+3
 
   LDA current_row_start
   SEC
@@ -171,7 +174,8 @@ no_change:
 .proc handle_veer_right_pre
   row_width := locals+0
   row_flags := locals+1
-  current_instruction := locals+2
+  change_road_data := locals+2
+  current_instruction := locals+3
 
   LDA current_row_width
   CLC
@@ -187,7 +191,8 @@ no_change:
 .proc handle_widen_pre
   row_width := locals+0
   row_flags := locals+1
-  current_instruction := locals+2
+  change_road_data := locals+2
+  current_instruction := locals+3
 
   LDA current_row_width
   CLC
@@ -196,7 +201,7 @@ no_change:
   BEQ store
   BCC store
   ; if widen isn't possible, do a left turn instead
-  LDA #LevelGenInstructions::VEER_LEFT
+  LDA #LevelGenInstructions::VEER_LEFT-1
   STA current_instruction
   JMP handle_veer_left_pre
 store:
@@ -223,7 +228,8 @@ store:
 .proc handle_thin_pre
   row_width := locals+0
   row_flags := locals+1
-  current_instruction := locals+2
+  change_road_data := locals+2
+  current_instruction := locals+3
 
   ; test whether the thinning is possible
   LDA current_row_width
@@ -232,7 +238,7 @@ store:
   SBC #$02
   CMP #LEVEL_MIN_WIDTH ; TODO: make this variable based on ruleset
   BCS :+
-    LDA #LevelGenInstructions::VEER_RIGHT
+    LDA #LevelGenInstructions::VEER_RIGHT-1
     STA current_instruction
     JMP handle_veer_right_pre
   :
@@ -249,26 +255,25 @@ store:
 .proc generate_random_level_data_post
   row_width := locals+0
   row_flags := locals+1
-  current_instruction := locals+2
+  change_road_data := locals+2
+  current_instruction := locals+3
+
+  LDA change_road_data
+  CMP #LEVEL_GEN_CHANGE_THRESHOLD
+  BCC no_change
 
   LDA current_instruction
-  AND #%11111000
-  CMP #%11111000
-  BNE done
-
-  LDA current_instruction
-  AND #%00000011
   
   CMP #LevelGenInstructions::VEER_LEFT
-  BEQ done
+  BCC no_change
   CMP #LevelGenInstructions::VEER_RIGHT
-  BEQ handle_veer_right_post
+  BCC handle_veer_right_post
   CMP #LevelGenInstructions::WIDEN
-  BEQ done
-  CMP #LevelGenInstructions::THIN
-  BEQ handle_thin_post
+  BCC no_change
 
-done:
+  JMP handle_thin_post
+
+no_change:
   RTS
 .endproc
 
@@ -277,7 +282,8 @@ done:
 .proc handle_veer_right_post
   row_width := locals+0
   row_flags := locals+1
-  current_instruction := locals+2
+  change_road_data := locals+2
+  current_instruction := locals+3
   
   LDA current_row_start
   CLC
@@ -294,7 +300,8 @@ done:
 .proc handle_thin_post
   row_width := locals+0
   row_flags := locals+1
-  current_instruction := locals+2
+  change_road_data := locals+2
+  current_instruction := locals+3
 
   ; the pre routine has already determined this to be safe
   LDA current_row_width
@@ -431,6 +438,11 @@ done:
   current_row_road_end := locals+4
   current_row_flags := locals+5
 
+  LDA current_row_road_start
+  CMP current_row_road_end
+  BCS wrapped
+regular:
+  ; in regular mode, draw grass until the road starts
   LDA current_row_offset
   CMP current_row_road_start
   BEQ draw_road_edge_left
@@ -438,6 +450,17 @@ done:
   CMP current_row_road_end
   BEQ draw_road_edge_right
   BCS draw_grass
+  JMP draw_road
+wrapped:
+  ; in wrapped road, draw road until the road ends
+  LDA current_row_offset
+  CMP current_row_road_end
+  BEQ draw_road_edge_right
+  BCC draw_road
+  CMP current_row_road_start
+  BEQ draw_road_edge_left
+  BCS draw_road
+  JMP draw_grass
 draw_road:
   LDA #$3D ; road
   JMP done
