@@ -72,6 +72,10 @@ limit_vel_y:
   :
 
   JSR player_limit_vel_pos
+  ; stop any attempt at steering from here
+  LDA #$00
+  STA player_vel_x
+  STA player_vel_x+1
 
 limit_vel_x:
   LDA player_vel_x+1
@@ -110,10 +114,10 @@ move:
 .proc player_decel
   LDA player_vel_y
   CLC
-  ADC #<PLAYER_ACCEL
+  ADC #<PLAYER_DECEL
   STA player_vel_y
   LDA player_vel_y+1
-  ADC #>PLAYER_ACCEL
+  ADC #>PLAYER_DECEL
   STA player_vel_y+1
   RTS
 .endproc
