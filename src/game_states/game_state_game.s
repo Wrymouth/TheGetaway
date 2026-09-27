@@ -14,6 +14,8 @@
     STA game_status_flags
   :
   JSR player_update
+
+  LDA #FALSE
   JSR camera_update
   JSR level_update
 

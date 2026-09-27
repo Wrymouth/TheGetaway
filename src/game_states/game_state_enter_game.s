@@ -14,9 +14,11 @@
   :
 
   JSR player_init
-  JSR camera_init
   ; initialize level RAM to just straight roads for two screens
   JSR level_init
+  
+  JSR camera_init
+
   JSR chr_allocator_init
 
   LDA game_status_flags

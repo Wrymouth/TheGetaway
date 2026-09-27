@@ -25,6 +25,7 @@ scroll_y: .res 1
   STA camera_vel_y+1
   STA scroll_x
   STA scroll_y
+  LDA #TRUE
   JSR camera_update
   RTS
 .endproc
@@ -34,6 +35,10 @@ scroll_y: .res 1
   CAMERA_PLAYER_OFFSET_Y = $10
 
   camera_goal_x := locals+0 ; 1 byte, just msb
+  camera_goal_offset_x := locals+1 ; 1 byte
+  move_instantly:= locals+2
+
+  STA move_instantly
 
   ; follow the player on the Y axis, the road on the X axis
   LDA player_y
@@ -66,7 +71,7 @@ scroll_y: .res 1
   LDA level_start,x
   CMP level_end,x
   BCS wrapped
-regular:  
+regular:
   ; road width
   LDA level_end,x
   SEC
@@ -79,7 +84,7 @@ regular:
   SEC
   SBC #LEVEL_TOTAL_WIDTH/2
   STA camera_goal_x
-  JMP set_camera_x
+  JMP check_camera_goal_wrap_x
 wrapped:
   ; road width
   LDA level_end,x
@@ -95,23 +100,90 @@ wrapped:
   SEC
   SBC #LEVEL_TOTAL_WIDTH/2
   STA camera_goal_x
+check_camera_goal_wrap_x:
+  LDA camera_goal_x
+  BMI wrap_goal_negative
+  CMP #LEVEL_TOTAL_WIDTH
+  BCS wrap_goal_positive
+  JMP set_camera_x
+wrap_goal_positive:
+  SEC
+  SBC #LEVEL_TOTAL_WIDTH
+  STA camera_goal_x
+  JMP set_camera_x
+wrap_goal_negative:
+  CLC
+  ADC #LEVEL_TOTAL_WIDTH
+  STA camera_goal_x
 set_camera_x:
-  ; now, where is camera_goal_x relative to camera_x?
+  LDA move_instantly
+  JSR camera_move_x
+
+set_scroll:
+  JSR camera_to_scroll
+
+  RTS
+.endproc
+
+.proc camera_move_x
+  camera_goal_x := locals+0 ; 1 byte, just msb
+  camera_goal_offset_x := locals+1 ; 1 byte
+  move_instantly:= locals+2
+  
+  BNE set_camera_to_goal_x
+
+  ; now, where is camera_goal_x relative to camera_x? is it to the left or to the right?
+  ; camera_x(+1) will never be negative at this stage, because it will have been wrapped
+  ; so if camera_goal_x is negative, we know it's to the left
+  LDA camera_goal_x
+  SEC
+  SBC camera_x+1
+  STA camera_goal_offset_x
+  BEQ done
+  BCS positive
+negative:
+  CMP #-(LEVEL_TOTAL_WIDTH/2)
+  BCS move_left
+  JMP move_right
+positive:
+  CMP #(LEVEL_TOTAL_WIDTH/2)
+  BCS move_left
+  JMP move_right
+move_left:
+  SEC
+  LDA camera_x
+  SBC #<CAMERA_VEL_X
+  STA camera_x
+  LDA camera_x+1
+  SBC #>CAMERA_VEL_X
+  STA camera_x+1
+  JMP wrap
+move_right:
+  CLC
+  LDA camera_x
+  ADC #<CAMERA_VEL_X
+  STA camera_x
+  LDA camera_x+1
+  ADC #>CAMERA_VEL_X
+  STA camera_x+1
+  JMP wrap
+set_camera_to_goal_x:
   LDA camera_goal_x
   STA camera_x+1
   LDA #$00
   STA camera_x
+
+wrap:
   LDA camera_x+1
   CMP #LEVEL_TOTAL_WIDTH
-  BCC :+
-    LDA #LEVEL_TOTAL_WIDTH
-    CLC
-    ADC camera_x+1
-    STA camera_x+1
-  :
+  BCC done
 
-  JSR camera_to_scroll
-
+  LDA #LEVEL_TOTAL_WIDTH
+  CLC
+  ADC camera_x+1
+  STA camera_x+1
+  
+done:
   RTS
 .endproc
 
