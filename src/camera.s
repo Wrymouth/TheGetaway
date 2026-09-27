@@ -33,6 +33,8 @@ scroll_y: .res 1
   CAMERA_PLAYER_OFFSET_X = $10
   CAMERA_PLAYER_OFFSET_Y = $10
 
+  camera_goal_x := locals+0 ; 1 byte, just msb
+
   ; follow the player on the Y axis, the road on the X axis
   LDA player_y
   STA camera_y
@@ -50,6 +52,45 @@ scroll_y: .res 1
     STA camera_y+1
   :
 
+  ; that was Y, now comes X
+  ; we want the road to be centered on the screen at the player's Y position
+  ; this means we must calculate where the center of the road is at that point
+  ;
+  ; the road always has the same number of horizontal tiles, namely 32.
+  ; the amount of grass tiles is total_tiles - (road_end - road_start)
+  ; the amount of grass on the left is half of that
+  ; camera is top left, so we want to place the camera X at road_start - half_grass
+  ; alternatively, place the camera at road_start + (road_width/2) - 16
+  LDX player_y+1
+  
+  ; road width
+  LDA level_end,x
+  SEC
+  SBC level_start,x
+  CLC
+  ADC #$01 ; road start inclusive
+  LSR ; div 2
+  CLC
+  ADC level_start,x
+  SEC
+  SBC #LEVEL_TOTAL_WIDTH/2
+  STA camera_goal_x
+
+  ; now, where is camera_goal_x relative to camera_x?
+  LDA camera_goal_x
+  STA camera_x+1
+  LDA #$00
+  STA camera_x
+  LDA camera_x+1
+  CMP #LEVEL_TOTAL_WIDTH
+  BCC :+
+    LDA #LEVEL_TOTAL_WIDTH
+    CLC
+    ADC camera_x+1
+    STA camera_x+1
+  :
+
+
   JSR camera_to_scroll
 
   RTS
@@ -57,10 +98,10 @@ scroll_y: .res 1
 
 .proc camera_to_scroll
   LDA camera_x+1
-  LSHIFT 5
+  LSHIFT 3
   STA scroll_x
   LDA camera_x
-  RSHIFT 3
+  RSHIFT 5
   ORA scroll_x
   STA scroll_x
 
