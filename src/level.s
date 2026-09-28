@@ -129,8 +129,8 @@ done:
   LDA rand_value
   STA current_instruction
 
-  ; LDA #LevelGenInstructions::VEER_RIGHT-1 ; DEBUG: override random road gen value
-  ; STA current_instruction
+  LDA #LevelGenInstructions::VEER_RIGHT-1 ; DEBUG: override random road gen value
+  STA current_instruction
 
   CMP #LevelGenInstructions::VEER_LEFT
   BCC handle_veer_left_pre
