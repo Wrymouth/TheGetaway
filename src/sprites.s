@@ -47,6 +47,7 @@ done:
 ; @arg A = oam_offset
 ; all other locals are themselves args
 .proc draw_sprite_fixed
+  real_tile := locals+8
   oam_offset := locals+9
   size := locals+10
   sprite_x := locals+11
@@ -65,6 +66,8 @@ draw:
   INY
 
   LDA (sprite_ptr),y
+  JSR get_chr_tile_index
+  LDA real_tile
   STA $0201,x
   INY
   
@@ -91,7 +94,7 @@ draw:
 
 ; all locals are args
 .proc draw_sprite_dynamic
-  real_tile := locals+0
+  real_tile := locals+8
   size := locals+10
   sprite_x := locals+11
   sprite_y := locals+12

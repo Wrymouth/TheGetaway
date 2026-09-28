@@ -6,6 +6,7 @@
 
 .zeropage
   chr_tile_to_draw: .res 1 ; the level drawing routine communicates this
+  tile_redraw_buffer: .res 8
 
 .segment "CHR_ALLOCATOR" :bss :mem $0400 :size $0100
 
@@ -199,7 +200,7 @@ draw:
     SBC #LEVEL_LENGTH
 :
   
-  ; mul 8, 16 bit result
+  ; mul 16, 16 bit result
   ASL
   ROL ppu_addr+0
   ASL
@@ -232,7 +233,7 @@ store_ppu_addr:
   LDY chr_tile_to_draw
   ; we've relocated the (source) tile, so move it in the map as well
   LDA dest_tile
-  CMP #60 ; watch out! if the tile is greater than 60, it should be written accurately to the next bank!
+  CMP #LEVEL_LENGTH ; watch out! if the tile is greater than 60, it should be written accurately to the next bank!
   BCC :+
     CLC
     ADC #68 ; this realigns it
@@ -249,7 +250,7 @@ store_ppu_addr:
   INC dest_tile
 
   LDA dest_tile
-  CMP #60 ; watch out! if the tile is greater than 60, it should be written accurately to the next bank!
+  CMP #LEVEL_LENGTH ; watch out! if the tile is greater than 60, it should be written accurately to the next bank!
   BCC :+
     CLC
     ADC #68 ; this realigns it
@@ -287,8 +288,8 @@ loop:
 ; given a base index (in A), returns the REAL CHR index for this tile (also in A)
 ; clobbers X
 .proc get_chr_tile_index
-  tile := locals+0
-  real_tile := locals+0 ; alias
+  tile := locals+8
+  real_tile := locals+8 ; alias
 
   STA tile
   PUSH_X
@@ -314,10 +315,83 @@ loop:
 
 
 ; update a tile, for example for health or foliage
-; X = pointer low
-; Y = pointer high
+; locals arg: new pointer to tile
+; Y = source offset
 .proc replace_chr_tile
+  ppu_addr := locals+12 ; 2 bytes, make sure these aren't used by the caller
+  ptr := locals+14 ; 2 bytes
 
+  LDA chr_ptr_lo,y
+  CMP ptr+0
+  BNE start
+
+  LDA chr_ptr_hi,y
+  CMP ptr+1
+  BEQ done ; they're the same, don't act
+
+start:
+  LDA ptr+0
+  STA chr_ptr_lo,y
+  LDA ptr+1
+  STA chr_ptr_hi,y
+
+  LDA #$00
+  STA ppu_addr
+  STA ppu_addr+1
+  ; demand this tile be rewritten during the draw phase of this frame
+
+  ; immediately write this to the relevant nametable data
+  LDA chr_map,y
+  TAX
+  ; convert this to a nametable entry
+  CMP #LEVEL_LENGTH
+  BCC :+
+    SEC
+    SBC #128 ; get the original offset back, to properly set the nametable
+  :
+
+  ; mul 16, 16 bit result
+  ASL
+  ROL ppu_addr+0
+  ASL
+  ROL ppu_addr+0
+  ASL
+  ROL ppu_addr+0
+  ASL
+  ROL ppu_addr+0
+  STA ppu_addr+1
+
+  ; add base nametable address
+  LDA ppu_addr+0
+  CPX #LEVEL_LENGTH
+  BCS :+
+    ; less than 30
+    CLC
+    ADC #$20
+    JMP store_ppu_addr
+  :
+  CLC
+  ADC #$28
+store_ppu_addr:
+  STA ppu_addr+0
+
+  VRAM_BUFFER_BEGIN
+  VRAM_BUFFER_SET_DATA_LENGTH #CHR_TILE_SIZE ; just one tile
+  VRAM_BUFFER_SET_NAMETABLE_POS ppu_addr
+  
+  ; duplicate of write_chr_tile, because of locals clashing
+  PUSH_Y ; not getting around this
+  LDY #$00
+loop:
+  LDA (ptr),y
+  VRAM_BUFFER_WRITE_A
+  INY
+  CPY #CHR_TILE_SIZE
+  BCC loop
+  VRAM_BUFFER_END
+  PULL_Y
+
+done:
   RTS
 .endproc
 
@@ -328,12 +402,12 @@ blank_chr_tile:
   .incbin "blank_tile.chr"
 
 initial_chr_layout_lo:
-  .lobytes player_chr_idle_0, player_chr_idle_1, player_chr_idle_2
-  .repeat 49
+  .lobytes player_chr_idle_0, player_chr_idle_1, player_chr_idle_2, health_bar_7_chr, health_bar_full_chr, health_bar_empty_chr
+  .repeat 46
     .byte <blank_chr_tile
   .endrepeat
 initial_chr_layout_hi:
-  .hibytes player_chr_idle_0, player_chr_idle_1, player_chr_idle_2
-  .repeat 49
+  .hibytes player_chr_idle_0, player_chr_idle_1, player_chr_idle_2, health_bar_7_chr, health_bar_full_chr, health_bar_empty_chr
+  .repeat 46
     .byte >blank_chr_tile
   .endrepeat

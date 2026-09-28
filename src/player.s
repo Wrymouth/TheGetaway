@@ -10,7 +10,7 @@ player_x: .res 2
 player_y: .res 2
 player_vel_x: .res 2
 player_vel_y: .res 2
-
+player_health: .res 2
 .code
 
 .proc player_init
@@ -27,10 +27,21 @@ player_vel_y: .res 2
   STA player_vel_x+1
   STA player_vel_y
   STA player_vel_y+1
+  STA player_health
+  LDA #PLAYER_MAX_HEALTH
+  STA player_health+1
   RTS
 .endproc
 
 .proc player_update
+  SUB16_L player_health, #$10
+  BCS :+
+    LDA #PLAYER_MAX_HEALTH
+    STA player_health+1
+    LDA #$00
+    STA player_health
+  :
+
   LDA pad1_pressed
   AND #BTN_UP
   BEQ :+
@@ -88,6 +99,8 @@ move:
   JSR player_move_x
   JSR player_move_y
 
+  ; JSR player_wrap_x
+
   LDA player_y+1
   CMP #LEVEL_LENGTH
   BCC :+
@@ -96,6 +109,8 @@ move:
     ADC player_y+1
     STA player_y+1
   :
+
+  ; handle collision
 
   RTS
 .endproc
@@ -314,6 +329,24 @@ done:
   RTS
 .endproc
 
+.proc player_wrap_x
+  LDA player_x+1
+  BMI wrap_negative
+  CMP #LEVEL_TOTAL_WIDTH
+  BCS wrap_positive
+  JMP done
+wrap_positive:
+  SEC
+  SBC #LEVEL_TOTAL_WIDTH
+  STA player_x+1
+  JMP done
+wrap_negative:
+  CLC
+  ADC #LEVEL_TOTAL_WIDTH
+  STA player_x+1
+done:
+  RTS
+.endproc
 
 
 .proc player_get_screen_coords

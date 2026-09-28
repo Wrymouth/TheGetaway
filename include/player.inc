@@ -1,9 +1,13 @@
 ; player position is Q11.5
 ; 8 bits "tile position", 3 bits "pixel position", 5 bits "subpixel position"
 
+PLAYER_MAX_HEALTH = 40
+
 PLAYER_MAX_VEL_Y = $00FF
 PLAYER_ACCEL = $0002
 PLAYER_DECEL = $0004
+PLAYER_ACCEL_ON_GRASS = $0001
+PLAYER_MAX_VEL_Y_ON_GRASS = $0080
 
 PLAYER_INITIAL_POS_X = $0F00
 PLAYER_INITIAL_POS_Y = $39FF
@@ -16,6 +20,7 @@ PLAYER_MAX_TURN_VEL = PLAYER_MAX_VEL_X ; the max forward velocity when driving s
 
 .zeropage
 .globalzp player_x, player_y
+.globalzp player_health
 
 .code
 .global player_init
