@@ -403,11 +403,11 @@ blank_chr_tile:
 
 initial_chr_layout_lo:
   .lobytes player_chr_idle_0, player_chr_idle_1, player_chr_idle_2, health_bar_7_chr, health_bar_full_chr, health_bar_empty_chr
-  .repeat 46
+  .repeat 50
     .byte <blank_chr_tile
   .endrepeat
 initial_chr_layout_hi:
   .hibytes player_chr_idle_0, player_chr_idle_1, player_chr_idle_2, health_bar_7_chr, health_bar_full_chr, health_bar_empty_chr
-  .repeat 46
+  .repeat 50
     .byte >blank_chr_tile
   .endrepeat
