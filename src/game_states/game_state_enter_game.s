@@ -1,6 +1,7 @@
 .include "common.inc"
 .include "game_states.inc"
 .include "player.inc"
+.include "npc_cars.inc"
 .include "level.inc"
 .include "chr_allocator.inc"
 
@@ -14,6 +15,7 @@
   :
 
   JSR player_init
+  JSR npc_cars_init
   ; initialize level RAM to just straight roads for two screens
   JSR level_init
   

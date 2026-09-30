@@ -403,11 +403,19 @@ blank_chr_tile:
 
 initial_chr_layout_lo:
   .lobytes player_chr_idle_0, player_chr_idle_1, player_chr_idle_2, health_bar_7_chr, health_bar_full_chr, health_bar_empty_chr
-  .repeat 50
+  .repeat 9
+    .byte <blank_chr_tile
+  .endrepeat
+  .lobytes enemy_car_chr_0, enemy_car_chr_1, enemy_car_chr_2, civilian_car_chr_0, civilian_car_chr_1, civilian_car_chr_2
+  .repeat 38
     .byte <blank_chr_tile
   .endrepeat
 initial_chr_layout_hi:
   .hibytes player_chr_idle_0, player_chr_idle_1, player_chr_idle_2, health_bar_7_chr, health_bar_full_chr, health_bar_empty_chr
-  .repeat 50
+  .repeat 9
+    .byte >blank_chr_tile
+  .endrepeat
+  .hibytes enemy_car_chr_0, enemy_car_chr_1, enemy_car_chr_2, civilian_car_chr_0, civilian_car_chr_1, civilian_car_chr_2 
+  .repeat 35
     .byte >blank_chr_tile
   .endrepeat

@@ -663,8 +663,8 @@ inc_row_offset:
 
 sprite_palettes:
 .byte $0F, $0F, $15, $30
-.byte $0F, $0F, $12, $30
 .byte $0F, $0F, $26, $30
+.byte $0F, $0F, $12, $30
 .byte $0F, $0F, $2A, $30
 
 bg_palette:

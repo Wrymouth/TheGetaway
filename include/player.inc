@@ -18,9 +18,15 @@ PLAYER_X_DRAG  = $000A
 
 PLAYER_MAX_TURN_VEL = PLAYER_MAX_VEL_X ; the max forward velocity when driving sideways
 
+.enum PlayerFlags
+  VISIBLE = $40
+  HAS_MOVED = $20
+.endenum
+
 .zeropage
 .globalzp player_x, player_y
 .globalzp player_health
+.globalzp player_flags
 
 .code
 .global player_init

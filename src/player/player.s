@@ -10,9 +10,13 @@
   player_vel_x: .res 2
   player_vel_y: .res 2
   player_health: .res 2
+  player_flags: .res 1
+  player_y_prev: .res 1
 .code
 
 .proc player_init
+  LDA #$00
+  STA player_y_prev
   LDA #<PLAYER_INITIAL_POS_X
   STA player_x
   LDA #>PLAYER_INITIAL_POS_X
@@ -33,6 +37,8 @@
 .endproc
 
 .proc player_update
+  LDA player_y+1
+  STA player_y_prev
   LDA pad1_pressed
   AND #BTN_UP
   BEQ :+
@@ -101,7 +107,18 @@ move:
     STA player_y+1
   :
 
-  ; handle collision
+  LDA player_y_prev
+  CMP player_y+1
+  BEQ :+
+    LDA player_flags
+    ORA #PlayerFlags::HAS_MOVED
+    STA player_flags
+    JMP collide
+  :
+  LDA player_flags
+  AND #<~PlayerFlags::HAS_MOVED
+  STA player_flags
+collide:
   JSR player_collide_with_grass
 
   RTS
