@@ -6,15 +6,18 @@
 .include "background.inc"
 .include "random.inc"
 
-.zeropage
+.segment "LOCALS" :zp :size $10 :mem $00
   locals: .res 16
+
+.segment "ZEROPAGE" :zp :size $f0 :mem $10
   game_status_flags: .res 1
   ppuctrl_settings: .res 1
   ppumask_settings: .res 1
   timer: .res 2
   
   sleeping: .res 1
-.code
+
+.segment "CODE" :size $8000 :fill :mem $8000 :out :off $10
 
 .proc reset
   sei
@@ -129,6 +132,3 @@ sleep:
   .word nmi
   .word reset
   .word irq
-
-.segment "CHR"
-.incbin "tiles.chr"

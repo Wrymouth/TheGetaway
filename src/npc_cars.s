@@ -43,6 +43,77 @@ check_spawn_timer:
   AND #PlayerFlags::HAS_MOVED
   BEQ done
   DEC time_to_next_car
+  BNE load_next
+  
+  JSR npc_car_spawn
+  INC16_L rand_seed
+  JSR get_rand_byte
+  STA time_to_next_car
+
+done:
+  RTS
+.endproc
+
+.proc check_car_despawn
+  despawn_seam := locals+0
+  car_bottom := locals+1
+  cam_wrapped := locals+2
+
+  LDA #FALSE
+  STA cam_wrapped
+
+  LDX #NUM_NPC_CARS-1
+loop:
+  LDA npc_car_flags,x
+  BPL load_next
+  
+  LDA camera_y+1
+  CLC
+  ADC #(LEVEL_LENGTH/2)+(>NPC_CAR_HEIGHT)
+  STA despawn_seam
+  ; wrap
+  CMP #LEVEL_LENGTH
+  BCC :+
+    SEC
+    SBC #LEVEL_LENGTH
+    STA despawn_seam
+    LDA #TRUE
+    STA cam_wrapped
+  :
+  LDA npc_car_y_hi,x
+  CLC
+  ADC #>NPC_CAR_HEIGHT
+  ; wrap, again
+  CMP #LEVEL_LENGTH
+  BCC :+
+    SEC
+    SBC #LEVEL_LENGTH
+  :
+  STA car_bottom
+  CMP despawn_seam
+  BCC load_next
+  
+  LDA cam_wrapped
+  BEQ :+
+    LDA car_bottom
+    CMP camera_y+1
+    BCS load_next
+  :
+  
+  LDA npc_car_flags,x
+  AND #<~NpcCarFlags::ACTIVE
+  STA npc_car_flags,x
+load_next:
+  DEX
+  BNE loop
+  JMP done ; no slots left
+
+check_spawn_timer:
+  ; only advance timer if you've moved this frame
+  LDA player_flags
+  AND #PlayerFlags::HAS_MOVED
+  BEQ done
+  DEC time_to_next_car
   BNE done
   
   JSR npc_car_spawn
@@ -86,7 +157,8 @@ load_next:
   BNE check_active
   ; check if a new one should spawn
   JSR check_car_spawn
-
+  ; check if an existing car should stop existing
+  JSR check_car_despawn
   RTS
 .endproc
 
@@ -101,12 +173,6 @@ load_next:
 .endproc
 
 .proc npc_cars_draw
-  size := locals+10
-  sprite_x := locals+11
-  sprite_y := locals+12
-  sprite_attr := locals+13
-  sprite_ptr := locals+14 ; 2 bytes
-  
   LDX #NUM_NPC_CARS-1
 check_active:
   LDA npc_car_flags,x
@@ -158,6 +224,7 @@ draw:
   npc_car_x_camera := locals+0 ; 2 bytes
   npc_car_y_camera := locals+2 ; 2 bytes
   temp_camera_y := locals+4 ; 1 byte, just the high
+  should_car_be_drawn := locals+5 ; if dips below screen, answer is no
   sprite_x := locals+11
   sprite_y := locals+12
 

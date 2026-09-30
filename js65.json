@@ -11,7 +11,6 @@
       "binIncludePaths": [
         "assets"
       ],
-      "target": "nes-nrom",
       "dbgfile": "TheGetaway.mlb",
       "mapfile": "TheGetaway.map"
     }

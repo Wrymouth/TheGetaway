@@ -6,7 +6,6 @@
 
 .zeropage
   chr_tile_to_draw: .res 1 ; the level drawing routine communicates this
-  tile_redraw_buffer: .res 8
 
 .segment "CHR_ALLOCATOR" :bss :mem $0400 :size $0100
 

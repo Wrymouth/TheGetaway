@@ -11,6 +11,8 @@ NUM_NPC_CARS = 4
   RIGHT = $FF
 .endenum
 
+NPC_CAR_HEIGHT = $0300
+
 .code
 
 .global npc_cars_init

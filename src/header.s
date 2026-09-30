@@ -1,4 +1,4 @@
-.segment "HEADER"
+.segment "HEADER" :size $10 :out :fill
   .byte "NES", $1a
   .byte 2               ; 32KB of PRG ROM, as two 16KB banks
   .byte 0               ; NO CHR ROM
