@@ -13,6 +13,10 @@ NUM_NPC_CARS = 4
 
 NPC_CAR_HEIGHT = $0300
 
+.zeropage
+.globalzp npc_car_y_lo
+.globalzp npc_car_y_hi
+
 .code
 
 .global npc_cars_init

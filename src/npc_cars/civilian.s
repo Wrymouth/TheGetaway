@@ -1,10 +1,26 @@
 .include "common.inc"
 .include "npc_cars.inc"
 .include "sprites.inc"
+.include "level.inc"
 
 .code
 
+CIVILIAN_SPEED = $0080
+
 .proc civilian_update
+  SEC
+  LDA npc_car_y_lo,x
+  SBC #<CIVILIAN_SPEED
+  STA npc_car_y_lo,x 
+  LDA npc_car_y_hi,x
+  SBC #>CIVILIAN_SPEED
+  STA npc_car_y_hi,x
+  ; wrap
+  BCS :+
+    CLC
+    ADC #LEVEL_LENGTH
+  :
+  STA npc_car_y_hi,x
   RTS
 .endproc
 

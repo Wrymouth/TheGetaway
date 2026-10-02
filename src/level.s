@@ -662,13 +662,13 @@ inc_row_offset:
 .endproc
 
 sprite_palettes:
-.byte $0F, $0F, $15, $30
-.byte $0F, $0F, $26, $30
-.byte $0F, $0F, $12, $30
-.byte $0F, $0F, $2A, $30
+.byte $2D, $0F, $15, $30
+.byte $2D, $0F, $26, $30
+.byte $2D, $0F, $12, $30
+.byte $2D, $0F, $2A, $30
 
 bg_palette:
-.byte $0F, $10, $2A, $30
+.byte $2D, $10, $2A, $30
 
 background_bank_0:
 .incbin "background_bank_0.chr"

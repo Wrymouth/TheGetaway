@@ -1,10 +1,27 @@
 .include "common.inc"
 .include "npc_cars.inc"
+.include "level.inc"
 .include "sprites.inc"
 
 .code
 
+ENEMY_SPEED = $00C0
+
+
 .proc enemy_update
+  SEC
+  LDA npc_car_y_lo,x
+  SBC #<ENEMY_SPEED
+  STA npc_car_y_lo,x 
+  LDA npc_car_y_hi,x
+  SBC #>ENEMY_SPEED
+  STA npc_car_y_hi,x
+  ; wrap
+  BCS :+
+    CLC
+    ADC #LEVEL_LENGTH
+  :
+  STA npc_car_y_hi,x
   RTS
 .endproc
 

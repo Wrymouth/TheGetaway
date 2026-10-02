@@ -138,11 +138,48 @@ done:
   INC16_L rand_seed
   JSR get_rand_byte
   LDA rand_value
-  AND #LEVEL_MAX_WIDTH-1 ; constrain to level width
+  AND #LEVEL_TOTAL_WIDTH-1 ; constrain to level width
+  STA npc_car_x_hi,x
   LDA camera_y+1
+  TAY
   STA npc_car_y_hi,x
   LDA #$00
   STA npc_car_y_lo,x
+  STA npc_car_x_lo,x
+
+  LDA level_start,y
+  CMP level_end,y
+  BCS wrapped
+regular:
+  LDA npc_car_x_hi,x
+  BNE :+
+    CLC
+    ADC #$01
+    STA npc_car_x_hi,x
+  :
+  CMP level_start,y
+  BCS @end
+  ASL npc_car_x_hi,x
+  JMP regular
+@end:
+  LDA npc_car_x_hi,x
+  CMP level_end,y
+  BCC spawn
+  LSR npc_car_x_hi,x
+  JMP @end
+wrapped:
+  ; TODO constrain to road
+  LDA npc_car_x_hi,x
+  CMP level_end,y
+  BCS @start
+  JMP spawn
+@start:
+  LDA npc_car_x_hi,x
+  CMP level_start,y
+  BCS spawn
+  ASL npc_car_x_hi,x
+  JMP @start
+spawn:
   RTS
 .endproc
 
@@ -196,7 +233,7 @@ load_next:
   JSR npc_car_get_screen_pos
   LDA npc_car_flags,x
   AND #NpcCarFlags::CIVILIAN
-  BEQ :+
+  BNE :+
     ; draw enemy
     LDA #<enemy_car_sprite
     STA sprite_ptr
@@ -227,10 +264,6 @@ draw:
   should_car_be_drawn := locals+5 ; if dips below screen, answer is no
   sprite_x := locals+11
   sprite_y := locals+12
-
-
-  ; wait! what if camera_y is *greater* than player_y?
-  ; when wrapping, that is a thing that may happen.
 
   LDA npc_car_y_hi,x
   CMP camera_y+1
