@@ -6,6 +6,7 @@
 .code
 
 CIVILIAN_SPEED = $0080
+CIVILIAN_HEALTH = 20
 
 .proc civilian_update
   SEC

@@ -16,6 +16,7 @@
 
   JSR player_init
   JSR npc_cars_init
+  JSR shots_init
   ; initialize level RAM to just straight roads for two screens
   JSR level_init
   

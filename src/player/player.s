@@ -1,8 +1,9 @@
 .include "common.inc"
 .include "player.inc"
 .include "player_internal.inc"
-.include "level.inc"
 .include "controller.inc"
+.include "level.inc"
+.include "shot.inc"
 
 .zeropage
   player_x: .res 2
@@ -120,6 +121,13 @@ move:
   STA player_flags
 collide:
   JSR player_collide_with_grass
+
+shoot:
+  LDA pad1_pressed
+  AND #BTN_B
+  BEQ :+
+    JSR shot_create
+  :
 
   RTS
 .endproc

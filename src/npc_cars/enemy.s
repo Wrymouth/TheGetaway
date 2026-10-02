@@ -6,6 +6,7 @@
 .code
 
 ENEMY_SPEED = $00C0
+ENEMY_HEALTH = 40
 
 
 .proc enemy_update
