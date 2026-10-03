@@ -4,6 +4,10 @@
 .include "camera.inc"
 .include "background.inc"
 
+;
+; the patented CHROCODILE
+;
+
 .zeropage
   chr_tile_to_draw: .res 1 ; the level drawing routine communicates this
 

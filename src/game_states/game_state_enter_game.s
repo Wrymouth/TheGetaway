@@ -5,10 +5,15 @@
 .include "level.inc"
 .include "chr_allocator.inc"
 
+.code 
+
 .proc game_state_enter_game
   LDA game_status_flags
   AND #GameStatusFlags::STATE_SWITCHED
   BEQ :+
+    LDA #$00
+    STA ppumask_settings
+    STA PPUMASK
     LDA game_status_flags
     EOR #GameStatusFlags::STATE_SWITCHED
     STA game_status_flags

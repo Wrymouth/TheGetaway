@@ -8,6 +8,8 @@
 .include "chr_allocator.inc"
 .include "hud.inc"
 
+.code 
+
 .proc game_state_game
   LDA game_status_flags
   AND #GameStatusFlags::STATE_SWITCHED

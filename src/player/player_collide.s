@@ -1,6 +1,7 @@
 .include "common.inc"
 .include "player.inc"
 .include "player_internal.inc"
+.include "game_states.inc"
 .include "level.inc"
 
 .proc player_collide_with_grass
@@ -39,6 +40,8 @@ hurt:
     LDA #$00
     STA player_health
     STA player_health+1
+    LDA #GameStates::GAME_OVER
+    JSR set_game_state
   :
 done:
   RTS
