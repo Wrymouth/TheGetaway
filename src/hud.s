@@ -139,20 +139,20 @@ health_bar_partial_ptrs_hi:
   .hibytes health_bar_partials
 
 health_bar_full_chr:
-  .incbin "health_bar_full.chr"
+  .incbin "health_bar/health_bar_full.chr"
 health_bar_empty_chr:
-  .incbin "health_bar_empty.chr"
+  .incbin "health_bar/health_bar_empty.chr"
 health_bar_1_chr:
-  .incbin "health_bar_1.chr"
+  .incbin "health_bar/health_bar_1.chr"
 health_bar_2_chr:
-  .incbin "health_bar_2.chr"
+  .incbin "health_bar/health_bar_2.chr"
 health_bar_3_chr:
-  .incbin "health_bar_3.chr"
+  .incbin "health_bar/health_bar_3.chr"
 health_bar_4_chr:
-  .incbin "health_bar_4.chr"
+  .incbin "health_bar/health_bar_4.chr"
 health_bar_5_chr:
-  .incbin "health_bar_5.chr"
+  .incbin "health_bar/health_bar_5.chr"
 health_bar_6_chr:
-  .incbin "health_bar_6.chr"
+  .incbin "health_bar/health_bar_6.chr"
 health_bar_7_chr:
-  .incbin "health_bar_7.chr"
+  .incbin "health_bar/health_bar_7.chr"
