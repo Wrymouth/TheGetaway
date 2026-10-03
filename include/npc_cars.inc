@@ -16,6 +16,7 @@ NPC_CAR_HEIGHT = $0300
 .zeropage
 .globalzp npc_car_y_lo
 .globalzp npc_car_y_hi
+.globalzp npc_car_flags
 
 .code
 

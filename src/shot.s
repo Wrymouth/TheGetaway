@@ -134,8 +134,6 @@ load_next:
   shot_right := locals+4 ; 2 bytes
   
 cmp_shot_left_car_right:
-  LDA shot_x_hi,y
-  CMP npc_car_x_lo,y
   RTS
 .endproc
 
