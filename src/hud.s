@@ -4,10 +4,18 @@
 .include "sprites.inc"
 
 .zeropage
+  previously_drawn_hp: .res 2
   hp_bar_segment_data_lo: .res NUM_SPRITES_HEALTH_BAR
   hp_bar_segment_data_hi: .res NUM_SPRITES_HEALTH_BAR
 
 .code
+
+.proc hud_init
+  LDA #$FF
+  STA previously_drawn_hp
+  STA previously_drawn_hp+1
+  RTS
+.endproc
 
 .proc hud_update
   partial_hp_amount := locals+0
@@ -67,6 +75,13 @@ fill_zero:
   TXA
   BNE fill_zero
 write_partial_chr:
+  LDA player_health
+  CMP previously_drawn_hp
+  BNE :+
+    LDA player_health+1
+    CMP previously_drawn_hp+1
+    BEQ done
+  :
   LDX partial_hp_amount
   LDA health_bar_partial_ptrs_lo,x
   STA partial_chr_ptr+0
@@ -74,6 +89,11 @@ write_partial_chr:
   STA partial_chr_ptr+1
   LDY #$03
   JSR replace_chr_tile
+  LDA player_health
+  STA previously_drawn_hp
+  LDA player_health+1
+  STA previously_drawn_hp+1
+done:
   RTS
 .endproc
 

@@ -3,6 +3,7 @@ HEALTH_BAR_BASE_Y = 30
 
 .code
 
+.global hud_init
 .global hud_update
 .global hud_draw
 

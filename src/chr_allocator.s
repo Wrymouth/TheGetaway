@@ -320,14 +320,6 @@ loop:
   ppu_addr := locals+12 ; 2 bytes, make sure these aren't used by the caller
   ptr := locals+14 ; 2 bytes
 
-  LDA chr_ptr_lo,y
-  CMP ptr+0
-  BNE start
-
-  LDA chr_ptr_hi,y
-  CMP ptr+1
-  BEQ done ; they're the same, don't act
-
 start:
   LDA ptr+0
   STA chr_ptr_lo,y

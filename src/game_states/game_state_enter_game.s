@@ -19,6 +19,7 @@
   JSR shots_init
   ; initialize level RAM to just straight roads for two screens
   JSR level_init
+  JSR hud_init
   
   JSR camera_init
 
