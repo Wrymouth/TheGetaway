@@ -50,6 +50,8 @@ loop:
   STA shot_cooldown
   
   LDA player_x
+  CLC
+  ADC #$80
   STA shot_x_lo,x
   LDA player_x+1
   STA shot_x_hi,x
