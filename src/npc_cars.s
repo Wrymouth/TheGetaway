@@ -177,6 +177,7 @@ wrapped:
   JMP spawn
 @start:
   LDA npc_car_x_hi,x
+  BEQ spawn
   CMP level_start,y
   BCS spawn
   ASL npc_car_x_hi,x
