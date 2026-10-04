@@ -6,6 +6,7 @@
 .include "shot.inc"
 .include "level.inc"
 .include "chr_allocator.inc"
+.include "score.inc"
 .include "hud.inc"
 
 .code 
@@ -30,6 +31,7 @@
   AND #GameStatusFlags::PAUSED
   BNE draw
   JSR player_update
+  JSR score_update
   JSR npc_cars_update
   JSR shots_update
   
@@ -43,6 +45,7 @@ draw:
   JSR write_chr_row
   
   JSR player_draw
+  JSR score_draw
   JSR npc_cars_draw
   JSR shots_draw
   JSR hud_draw

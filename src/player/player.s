@@ -4,6 +4,7 @@
 .include "controller.inc"
 .include "level.inc"
 .include "shot.inc"
+.include "score.inc"
 
 .zeropage
   player_x: .res 2
@@ -111,6 +112,7 @@ move:
   LDA player_y_prev
   CMP player_y+1
   BEQ :+
+    JSR add_score
     LDA player_flags
     ORA #PlayerFlags::HAS_MOVED
     STA player_flags

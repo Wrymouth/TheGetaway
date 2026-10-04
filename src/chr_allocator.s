@@ -324,7 +324,6 @@ loop:
   ppu_addr := locals+12 ; 2 bytes, make sure these aren't used by the caller
   ptr := locals+14 ; 2 bytes
 
-start:
   LDA ptr+0
   STA chr_ptr_lo,y
   LDA ptr+1
@@ -397,8 +396,8 @@ blank_chr_tile:
   .incbin "blank_tile.chr"
 
 initial_chr_layout_lo:
-  .lobytes player_chr_idle_0, player_chr_idle_1, player_chr_idle_2, health_bar_7_chr, health_bar_full_chr, health_bar_empty_chr
-  .repeat 8
+  .lobytes player_chr_idle_0, player_chr_idle_1, player_chr_idle_2, health_bar_7_chr, health_bar_full_chr, health_bar_empty_chr, blank_chr_tile, score_chr_0, score_chr_1, score_chr_2
+  .repeat 4
     .byte <blank_chr_tile
   .endrepeat
   .lobytes shot_chr, enemy_car_chr_0, enemy_car_chr_1, enemy_car_chr_2, civilian_car_chr_0, civilian_car_chr_1, civilian_car_chr_2
@@ -406,8 +405,8 @@ initial_chr_layout_lo:
     .byte <blank_chr_tile
   .endrepeat
 initial_chr_layout_hi:
-  .hibytes player_chr_idle_0, player_chr_idle_1, player_chr_idle_2, health_bar_7_chr, health_bar_full_chr, health_bar_empty_chr
-  .repeat 8
+  .hibytes player_chr_idle_0, player_chr_idle_1, player_chr_idle_2, health_bar_7_chr, health_bar_full_chr, health_bar_empty_chr, blank_chr_tile, score_chr_0, score_chr_1, score_chr_2
+  .repeat 4
     .byte >blank_chr_tile
   .endrepeat
   .hibytes shot_chr, enemy_car_chr_0, enemy_car_chr_1, enemy_car_chr_2, civilian_car_chr_0, civilian_car_chr_1, civilian_car_chr_2 

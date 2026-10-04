@@ -27,8 +27,9 @@
   JSR hud_init
   
   JSR camera_init
-
+  
   JSR chr_allocator_init
+  JSR score_init
 
   LDA game_status_flags
   ORA #GameStatusFlags::NMI_SKIP_SCROLL
