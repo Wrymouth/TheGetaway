@@ -40,6 +40,7 @@
   JSR level_update
 
   JSR hud_update
+  JSR progression_update
 draw:
   JSR level_draw_row
   JSR write_chr_row

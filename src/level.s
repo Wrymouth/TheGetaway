@@ -117,7 +117,6 @@ done:
 
   JSR get_rand_byte ; first byte: does a road change happen at all?
 
-  ; 1/32 chance of a road change
   LDA rand_value
   ; LDA #LEVEL_GEN_CHANGE_THRESHOLD-1 ; DEBUG: always have straight road
   CMP #LEVEL_GEN_CHANGE_THRESHOLD
@@ -535,7 +534,6 @@ loop_draw_bank_1:
   RTS
 .endproc
 
-; TODO do this during vblank instead
 .proc level_write_palettes
   VRAM_BUFFER_BEGIN
   VRAM_BUFFER_SET_DATA_LENGTH #32

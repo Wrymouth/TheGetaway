@@ -1,3 +1,6 @@
+.zeropage
+.global score
+
 .segment "SCORE"
 .global score_chr_0
 .global score_chr_1

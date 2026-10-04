@@ -5,6 +5,7 @@
   buffer_idx: .res 1
   vram_buffer_saved_stack_ptr: .res 1
   temp_vram_buffer_length: .res 1
+  temp_palette_to_draw: .res 1
   vram_buffer_jump: .res 3
 
 .code
@@ -38,7 +39,13 @@ process_string:
   BNE :+
     JMP done
   :
-  TAY
+  STA temp_vram_buffer_length
+  AND #$80
+  BEQ :+
+    JMP draw_palettes
+  :
+  
+  LDY temp_vram_buffer_length
   ; get address
   PLA
   STA PPUADDR
@@ -69,6 +76,35 @@ draw_tiles:
     PLA
     STA PPUDATA
   .endrepeat
+  JMP process_string
+
+draw_palettes:
+  PLA
+  STA temp_palette_to_draw
+  LDA #$3F
+  STA PPUADDR
+  LDA #$02
+  STA PPUADDR
+  LDA temp_palette_to_draw
+  STA PPUDATA
+  LDA #$3F
+  STA PPUADDR
+  LDA #$06
+  STA PPUADDR
+  LDA temp_palette_to_draw
+  STA PPUDATA
+  LDA #$3F
+  STA PPUADDR
+  LDA #$0A
+  STA PPUADDR
+  LDA temp_palette_to_draw
+  STA PPUDATA
+  LDA #$3F
+  STA PPUADDR
+  LDA #$0E
+  STA PPUADDR
+  LDA temp_palette_to_draw
+  STA PPUDATA
   JMP process_string
 
 done:

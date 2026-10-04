@@ -4,6 +4,7 @@
 .include "npc_cars.inc"
 .include "level.inc"
 .include "chr_allocator.inc"
+.include "progression.inc"
 
 .code 
 
@@ -30,6 +31,7 @@
   
   JSR chr_allocator_init
   JSR score_init
+  JSR progression_init
 
   LDA game_status_flags
   ORA #GameStatusFlags::NMI_SKIP_SCROLL
