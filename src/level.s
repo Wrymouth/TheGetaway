@@ -4,6 +4,7 @@
 .include "background.inc"
 .include "chr_allocator.inc"
 .include "random.inc"
+.include "progression.inc"
 
 .zeropage
 current_row_width: .res 1
@@ -119,7 +120,7 @@ done:
 
   LDA rand_value
   ; LDA #LEVEL_GEN_CHANGE_THRESHOLD-1 ; DEBUG: always have straight road
-  CMP #LEVEL_GEN_CHANGE_THRESHOLD
+  CMP road_change_chance
   STA change_road_data
   BCC no_change
 
@@ -200,7 +201,7 @@ no_change:
   LDA current_row_width
   CLC
   ADC #$02
-  CMP #LEVEL_MAX_WIDTH ; TODO: make this variable based on ruleset
+  CMP road_max_width ; TODO: make this variable based on ruleset
   BEQ store
   BCC store
   ; if widen isn't possible, thin instead
@@ -239,7 +240,7 @@ store:
   STA row_width
   SEC
   SBC #$02
-  CMP #LEVEL_MIN_WIDTH ; TODO: make this variable based on ruleset
+  CMP road_min_width
   BCS :+
     LDA #LevelGenInstructions::WIDEN-1
     STA current_instruction

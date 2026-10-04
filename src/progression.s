@@ -3,6 +3,8 @@
 .include "score.inc"
 .include "background.inc"
 
+NUM_PHASES = 6
+
 .zeropage
   current_phase: .res 1
   road_min_width: .res 1
@@ -27,6 +29,8 @@
   ; check if we're in a phase transition
   ; check if we've hit a new phase
   LDX current_phase
+  CPX #NUM_PHASES-1
+  BEQ done ; don't progress if we're at max phase
   LDA score+2
   CMP phase_milestones_2,x
   BEQ check_1
@@ -69,20 +73,20 @@ done:
 .endproc
 
 phase_milestones_0:
-.byte 0, 0, 0, 0, 0, 0
+.byte 0, 0, 0, 0, 0
 phase_milestones_1:
-.byte 2, 15, 30, 45, 60, 80
+.byte 2, 15, 30, 45, 60
 phase_milestones_2:
-.byte $00, $00, $00, $00, $00, $00
+.byte 0, 0, 0, 0, 0
 
 min_widths:
-.byte 10, 10, 10, 10, 10, 10
+.byte 12, 10, 12, 8, 6, 10
 
 max_widths:
-.byte 20, 20, 20, 20, 20, 20
+.byte 22, 20, 22, 18, 12, 20
 
 road_change_thresholds:
-.byte $FF, $F0, $F0, $F0, $F0, $F0
+.byte $FF, $F8, $F0, $F8, $F0, $F0
 
 phase_palettes:
 .byte $2A, $1A, $27, $21, $10, $31
