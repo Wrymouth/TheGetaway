@@ -54,6 +54,7 @@ loop:
   ADC #$80
   STA shot_x_lo,x
   LDA player_x+1
+  ADC #$00
   STA shot_x_hi,x
 
   LDA player_y
