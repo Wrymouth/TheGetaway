@@ -53,3 +53,4 @@ VRAM_BUFFER_SIZE = $9F
 .code
 .global clear_vram_buffer
 .global draw_buffered_gfx
+.global clear_screen

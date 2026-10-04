@@ -65,23 +65,6 @@ done:
   RTS
 .endproc
 
-.proc clear_screen
-  LDA #$20
-  STA PPUADDR
-  LDA #$00
-  STA PPUADDR
-  LDX #$00
-  LDA #$80
-loop:
-  STA PPUDATA
-  STA PPUDATA
-  STA PPUDATA
-  STA PPUDATA
-  DEX
-  BNE loop
-  RTS
-.endproc
-
 .proc load_title_chr
   tile_ptr := locals+0
 
