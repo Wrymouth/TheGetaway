@@ -28,12 +28,13 @@
 .endproc
 
 .proc check_car_spawn
-  LDX #NUM_NPC_CARS-1
+  LDX #NUM_NPC_CARS
 loop:
+  DEX
   LDA npc_car_flags,x
   BPL check_spawn_timer
 load_next:
-  DEX
+  TXA
   BNE loop
   JMP done ; no slots left
 
@@ -62,8 +63,9 @@ done:
   LDA #FALSE
   STA cam_wrapped
 
-  LDX #NUM_NPC_CARS-1
+  LDX #NUM_NPC_CARS
 loop:
+  DEX
   LDA npc_car_flags,x
   BPL load_next
   
@@ -104,7 +106,7 @@ loop:
   AND #<~NpcCarFlags::ACTIVE
   STA npc_car_flags,x
 load_next:
-  DEX
+  TXA
   BNE loop
   JMP done ; no slots left
 
@@ -184,13 +186,14 @@ spawn:
 .endproc
 
 .proc npc_cars_update
-  LDX #NUM_NPC_CARS-1
+  LDX #NUM_NPC_CARS
 check_active:
+  DEX
   LDA npc_car_flags,x
   BPL load_next
   JSR npc_car_update
 load_next:
-  DEX
+  TXA
   BNE check_active
   ; check if a new one should spawn
   JSR check_car_spawn
@@ -210,15 +213,16 @@ load_next:
 .endproc
 
 .proc npc_cars_draw
-  LDX #NUM_NPC_CARS-1
+  LDX #NUM_NPC_CARS
 check_active:
+  DEX
   LDA npc_car_flags,x
   AND #NpcCarFlags::ACTIVE|NpcCarFlags::VISIBLE
   CMP #NpcCarFlags::ACTIVE|NpcCarFlags::VISIBLE
   BNE load_next
   JSR npc_car_draw
 load_next:
-  DEX
+  TXA
   BNE check_active
   RTS
 .endproc
